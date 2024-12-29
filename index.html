@@ -1,41 +1,69 @@
-async function startScanner() {
-    try {
-        // Initialize ZXing code reader
-        const codeReader = new ZXing.BrowserQRCodeReader();
-
-        // List video input devices
-        const videoInputDevices = await codeReader.listVideoInputDevices();
-
-        if (videoInputDevices.length === 0) {
-            outputElement.textContent = "No video devices found.";
-            return;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcode Scanner with QuaggaJS</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
         }
-
-        // Automatically select the back camera if available
-        const backCamera = videoInputDevices.find(device =>
-            device.label.toLowerCase().includes('back')
-        );
-        const selectedDeviceId = backCamera ? backCamera.deviceId : videoInputDevices[0].deviceId;
-
-        // Start decoding video from the selected device
-        await codeReader.decodeFromVideoDevice(
-            selectedDeviceId,
-            videoElement,
-            (result, err) => {
-                if (result) {
-                    outputElement.textContent = `Barcode: ${result.text}`;
-                    console.log("Barcode scanned:", result.text);
-                } else if (err && !(err instanceof ZXing.NotFoundException)) {
-                    console.error("Scanning error:", err);
-                    outputElement.textContent = "Error during scanning. Check console.";
+        video {
+            width: 100%;
+            max-width: 400px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        #output {
+            margin-top: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Barcode Scanner</h1>
+    <video id="video" autoplay muted></video>
+    <div id="output">Scanning...</div>
+    <script>
+        // Initialize QuaggaJS
+        Quagga.init(
+            {
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: document.querySelector("#video"), // Bind the video element
+                },
+                decoder: {
+                    readers: ["code_128_reader", "ean_reader", "upc_reader", "qr_reader"], // Supported barcode formats
+                },
+            },
+            function (err) {
+                if (err) {
+                    console.error("QuaggaJS Error:", err);
+                    document.getElementById("output").textContent = "Error initializing QuaggaJS.";
+                    document.getElementById("output").classList.add("error");
+                    return;
                 }
+                console.log("QuaggaJS initialized.");
+                Quagga.start();
             }
         );
-    } catch (error) {
-        console.error("Error initializing scanner:", error);
-        outputElement.textContent = "Error initializing scanner. Check console.";
-    }
-}
 
-// Start the scanner when the page loads
-startScanner();
+        // On barcode detection
+        Quagga.onDetected(function (result) {
+            const code = result.codeResult.code;
+            document.getElementById("output").textContent = `Barcode Detected: ${code}`;
+            console.log("Barcode detected:", code);
+        });
+    </script>
+</body>
+</html>
