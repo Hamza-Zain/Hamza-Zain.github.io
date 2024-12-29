@@ -60,49 +60,61 @@
             } catch (error) {
                 console.error("Error accessing camera:", error);
                 outputElement.textContent = "Error accessing the camera. Check permissions.";
-                return;
+                return false;
             }
+            return true;
         }
 
         async function initializeBarcodeScanner() {
-            // Initialize the BarcodeScanner from ML Kit
-            const vision = await window.mediapipe.tasks.vision.createBarcodeScanner();
+            try {
+                // Load the BarcodeScanner from MediaPipe Tasks
+                const BarcodeScanner = window.mediapipe.tasks.vision.BarcodeScanner;
+                const vision = await BarcodeScanner.createFromOptions({
+                    baseOptions: {
+                        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/vision/barcode_scanner/1/barcode_scanner.task',
+                    }
+                });
 
-            // Process video frames continuously
-            const processVideoFrame = async () => {
-                if (videoElement.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-                    // Detect barcodes in the current video frame
-                    const barcodeResults = vision.detect(videoElement);
+                // Process video frames continuously
+                const processVideoFrame = async () => {
+                    if (videoElement.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+                        const videoFrame = videoElement.captureStream().getVideoTracks()[0];
+                        const results = vision.detect(videoFrame);
 
-                    barcodeResults.forEach((barcode) => {
-                        if (!scannedBarcodes.has(barcode.displayValue)) {
-                            scannedBarcodes.add(barcode.displayValue);
-                            addBarcodeToList(barcode.displayValue);
-                        }
-                    });
-                }
-                requestAnimationFrame(processVideoFrame);
-            };
-            processVideoFrame();
+                        results.barcodes.forEach((barcode) => {
+                            const code = barcode.rawValue;
+                            if (!scannedBarcodes.has(code)) {
+                                scannedBarcodes.add(code);
+                                addBarcodeToList(code);
+                            }
+                        });
+                    }
+                    requestAnimationFrame(processVideoFrame);
+                };
+
+                processVideoFrame();
+            } catch (error) {
+                console.error("Error initializing barcode scanner:", error);
+                outputElement.textContent = "Error initializing the barcode scanner.";
+            }
         }
 
-        // Function to add a scanned barcode to the list
         function addBarcodeToList(barcode) {
             const listItem = document.createElement("li");
             listItem.textContent = barcode;
             barcodeListElement.appendChild(listItem);
         }
 
-        // Initialize both the camera and the barcode scanner
         async function initialize() {
             outputElement.textContent = "Initializing camera...";
-            await initializeCamera();
-            outputElement.textContent = "Initializing barcode scanner...";
-            await initializeBarcodeScanner();
-            outputElement.textContent = "Point your camera at barcodes.";
+            const cameraInitialized = await initializeCamera();
+            if (cameraInitialized) {
+                outputElement.textContent = "Initializing barcode scanner...";
+                await initializeBarcodeScanner();
+                outputElement.textContent = "Point your camera at barcodes.";
+            }
         }
 
-        // Run the initialization when the page loads
         initialize();
     </script>
 </body>
