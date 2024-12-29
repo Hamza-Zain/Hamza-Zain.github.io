@@ -42,7 +42,7 @@
     <h1>ZXing Barcode Scanner v1</h1>
     <video id="video" autoplay muted playsinline></video>
     <ul id="barcodeList"></ul>
-    <div id="output">Initializing scanner...</div>
+    <div id="output">Initializing camera...</div>
 
     <script>
         const videoElement = document.getElementById('video');
@@ -56,40 +56,47 @@
         function startScanner() {
             outputElement.textContent = "Initializing camera...";
 
-            // Get the camera and start video feed
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-                .then(function (stream) {
-                    videoElement.srcObject = stream;
-                    outputElement.textContent = "Scanning for barcodes...";
-                    startZXing();
-                })
-                .catch(function (err) {
-                    console.error('Camera access denied:', err);
-                    outputElement.textContent = 'Error accessing camera. Please allow permissions.';
-                });
+            // First, check if the user has granted permission to use the camera
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+                    .then(function (stream) {
+                        // Attach the video stream to the video element
+                        videoElement.srcObject = stream;
+                        outputElement.textContent = "Scanning for barcodes...";
+
+                        // Call ZXing barcode scanning
+                        startZXing();
+                    })
+                    .catch(function (err) {
+                        console.error('Camera access denied:', err);
+                        outputElement.textContent = 'Error accessing camera. Please allow permissions.';
+                    });
+            } else {
+                outputElement.textContent = 'Your browser does not support camera access.';
+            }
         }
 
         // Start scanning using ZXing library
         function startZXing() {
-            codeReader
-                .decodeFromVideoDevice(null, videoElement, (result, err) => {
-                    if (err) {
-                        console.error(err);
-                        return;
-                    }
+            // Initialize ZXing with the camera feed
+            codeReader.decodeFromVideoDevice(null, videoElement, (result, err) => {
+                if (err) {
+                    console.error(err);
+                    return;
+                }
 
-                    if (result) {
-                        const barcode = result.text;
-                        if (!scannedBarcodes.has(barcode)) {
-                            scannedBarcodes.add(barcode);
-                            addBarcodeToList(barcode);
-                        }
+                if (result) {
+                    const barcode = result.text;
+                    if (!scannedBarcodes.has(barcode)) {
+                        scannedBarcodes.add(barcode);
+                        addBarcodeToList(barcode);
                     }
-                })
-                .catch(function (err) {
-                    console.error('Error with ZXing scanner:', err);
-                    outputElement.textContent = 'Error starting the scanner.';
-                });
+                }
+            })
+            .catch(function (err) {
+                console.error('Error with ZXing scanner:', err);
+                outputElement.textContent = 'Error starting the scanner.';
+            });
         }
 
         // Display the barcode in the list
@@ -100,7 +107,9 @@
         }
 
         // Start scanner when the page loads
-        startScanner();
+        window.onload = function() {
+            startScanner();
+        };
     </script>
 </body>
 </html>
