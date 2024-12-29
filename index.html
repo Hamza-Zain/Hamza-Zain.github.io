@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZXing Barcode Scanner v1</title>
+    <title>Continuous Barcode Scanner with ZXing v2</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -23,6 +23,9 @@
             font-weight: bold;
             color: #333;
         }
+        .error {
+            color: red;
+        }
         ul {
             list-style-type: none;
             padding: 0;
@@ -39,46 +42,47 @@
     <script src="https://unpkg.com/@zxing/library@0.18.7/dist/index.min.js"></script>
 </head>
 <body>
-    <h1>ZXing Barcode Scanner v1</h1>
+    <h1>Continuous Barcode Scanner with ZXing v2</h1>
     <video id="video" autoplay muted playsinline></video>
     <ul id="barcodeList"></ul>
-    <div id="output">Initializing camera...</div>
-
+    <div id="output">Initializing barcode scanner...</div>
     <script>
         const videoElement = document.getElementById('video');
         const outputElement = document.getElementById('output');
         const barcodeListElement = document.getElementById('barcodeList');
-        const scannedBarcodes = new Set(); // To avoid duplicate barcodes
+        const scannedBarcodes = new Set(); // To keep track of already scanned barcodes
 
         // Initialize ZXing barcode reader
         const codeReader = new ZXing.BrowserMultiFormatReader();
 
-        function startScanner() {
-            outputElement.textContent = "Initializing camera...";
+        async function initializeCameraAndScanner() {
+            try {
+                // Find the back camera
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const backCamera = devices.find(
+                    (device) => device.kind === "videoinput" && device.label.toLowerCase().includes("back")
+                );
 
-            // First, check if the user has granted permission to use the camera
-            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-                    .then(function (stream) {
-                        // Attach the video stream to the video element
-                        videoElement.srcObject = stream;
-                        outputElement.textContent = "Scanning for barcodes...";
+                const constraints = backCamera
+                    ? { video: { deviceId: { exact: backCamera.deviceId } } }
+                    : { video: { facingMode: "environment" } };
 
-                        // Call ZXing barcode scanning
-                        startZXing();
-                    })
-                    .catch(function (err) {
-                        console.error('Camera access denied:', err);
-                        outputElement.textContent = 'Error accessing camera. Please allow permissions.';
-                    });
-            } else {
-                outputElement.textContent = 'Your browser does not support camera access.';
+                // Request the video stream
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                videoElement.srcObject = stream;
+
+                // Initialize ZXing barcode scanner
+                startZXing();
+            } catch (error) {
+                console.error("Error accessing camera or initializing scanner:", error);
+                outputElement.textContent = "Error accessing the camera or initializing scanner.";
+                outputElement.classList.add("error");
             }
         }
 
-        // Start scanning using ZXing library
+        // Start scanning using ZXing
         function startZXing() {
-            // Initialize ZXing with the camera feed
+            // Start decoding barcodes
             codeReader.decodeFromVideoDevice(null, videoElement, (result, err) => {
                 if (err) {
                     console.error(err);
@@ -87,29 +91,29 @@
 
                 if (result) {
                     const barcode = result.text;
+
                     if (!scannedBarcodes.has(barcode)) {
-                        scannedBarcodes.add(barcode);
-                        addBarcodeToList(barcode);
+                        scannedBarcodes.add(barcode); // Track unique barcodes
+                        addBarcodeToList(barcode); // Display barcode
                     }
                 }
             })
             .catch(function (err) {
                 console.error('Error with ZXing scanner:', err);
                 outputElement.textContent = 'Error starting the scanner.';
+                outputElement.classList.add("error");
             });
         }
 
-        // Display the barcode in the list
+        // Function to add a scanned barcode to the list
         function addBarcodeToList(barcode) {
             const listItem = document.createElement("li");
             listItem.textContent = barcode;
             barcodeListElement.appendChild(listItem);
         }
 
-        // Start scanner when the page loads
-        window.onload = function() {
-            startScanner();
-        };
+        // Run the initialization when the page loads
+        initializeCameraAndScanner();
     </script>
 </body>
 </html>
