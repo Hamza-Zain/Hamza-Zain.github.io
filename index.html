@@ -45,11 +45,26 @@
             margin-bottom: 10px;
             color: #4CAF50;
         }
+        #initializeButton {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            font-size: 1em;
+            color: white;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #initializeButton:focus {
+            outline: none;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
     <h1>Continuous Barcode Scanner</h1>
+    <button id="initializeButton">Initialize Scanner</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
     <ol id="barcodeList"></ol>
@@ -63,7 +78,8 @@
         const outputElement = document.getElementById('output');
         const barcodeListElement = document.getElementById('barcodeList');
         const latestBarcodeElement = document.getElementById('latestBarcode');
-        const beepSound = document.getElementById('beepSound'); // Reference to the audio element
+        const beepSound = document.getElementById('beepSound');
+        const initializeButton = document.getElementById('initializeButton');
         const scannedBarcodes = new Set(); // To keep track of already scanned barcodes
 
         // Function to validate EAN-13 barcodes
@@ -79,6 +95,9 @@
 
         async function initializeCameraAndScanner() {
             try {
+                // Hide the initialize button after user interaction
+                initializeButton.style.display = 'none';
+
                 // Find the back camera
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 const backCamera = devices.find(
@@ -171,8 +190,8 @@
             });
         }
 
-        // Run the initialization when the page loads
-        initializeCameraAndScanner();
+        // Add event listener to initialize the scanner on button click
+        initializeButton.addEventListener('click', initializeCameraAndScanner);
     </script>
 </body>
 </html>
