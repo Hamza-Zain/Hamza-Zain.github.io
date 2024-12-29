@@ -80,7 +80,6 @@
         const latestBarcodeElement = document.getElementById('latestBarcode');
         const beepSound = document.getElementById('beepSound');
         const initializeButton = document.getElementById('initializeButton');
-        const scannedBarcodes = new Set(); // To keep track of already scanned barcodes
         let lastDetected = '';
         let confirmCounter = 0;
 
@@ -166,11 +165,10 @@
 
         // Function to process a confirmed barcode
         function processBarcode(barcode) {
-            if (validateEAN13(barcode) && !scannedBarcodes.has(barcode)) {
-                scannedBarcodes.add(barcode);
+            if (validateEAN13(barcode)) {
                 updateUIWithBarcode(barcode);
             } else {
-                console.log("Invalid or duplicate barcode:", barcode);
+                console.log("Invalid barcode:", barcode);
             }
         }
 
