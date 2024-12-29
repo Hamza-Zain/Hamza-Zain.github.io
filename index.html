@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Barcode Scanner</title>
+    <title>Continuous Barcode Scanner</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -26,20 +26,31 @@
         .error {
             color: red;
         }
-        canvas {
-            display: none;
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background: #f9f9f9;
+            margin: 5px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-align: left;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Enhanced Barcode Scanner</h1>
+    <h1>Continuous Barcode Scanner</h1>
     <video id="video" autoplay muted playsinline></video>
-    <canvas id="canvas"></canvas>
+    <ul id="barcodeList"></ul>
     <div id="output">Initializing barcode scanner...</div>
     <script>
         const videoElement = document.getElementById('video');
         const outputElement = document.getElementById('output');
+        const barcodeListElement = document.getElementById('barcodeList');
+        const scannedBarcodes = new Set(); // To keep track of already scanned barcodes
 
         // Function to validate EAN-13 barcodes
         function validateEAN13(barcode) {
@@ -88,11 +99,6 @@
                         halfSample: true
                     },
                     locate: true, // Detect barcodes in varying positions
-                    debug: {
-                        drawBoundingBox: true, // Draw bounding box around detected barcode
-                        showFrequency: true,
-                        drawScanline: true
-                    }
                 }, function (err) {
                     if (err) {
                         console.error("Quagga initialization failed:", err);
@@ -101,7 +107,7 @@
                         return;
                     }
                     Quagga.start();
-                    outputElement.textContent = "Point your camera at a barcode.";
+                    outputElement.textContent = "Point your camera at barcodes.";
                 });
 
                 // Listen for barcode detection
@@ -110,44 +116,12 @@
 
                     // Validate EAN-13 barcodes
                     if (code.length === 13 && validateEAN13(code)) {
-                        outputElement.textContent = `Valid Barcode: ${code}`;
-                        console.log("Valid barcode:", code);
-
-                        // Optionally stop after detection
-                        Quagga.stop();
+                        if (!scannedBarcodes.has(code)) {
+                            scannedBarcodes.add(code); // Track unique barcodes
+                            addBarcodeToList(code); // Display barcode
+                        }
                     } else {
-                        outputElement.textContent = "Invalid or incorrect barcode detected.";
-                        console.log("Invalid barcode:", code);
-                    }
-                });
-
-                // Optional: Debugging overlay to visualize detection process
-                Quagga.onProcessed((result) => {
-                    const canvas = Quagga.canvas.dom.overlay;
-                    const ctx = canvas.getContext("2d");
-
-                    if (result) {
-                        if (result.boxes) {
-                            result.boxes
-                                .filter((box) => box !== result.box)
-                                .forEach((box) => {
-                                    Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, ctx, {
-                                        color: "blue",
-                                        lineWidth: 2
-                                    });
-                                });
-                        }
-
-                        if (result.box) {
-                            Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, ctx, {
-                                color: "green",
-                                lineWidth: 2
-                            });
-                        }
-
-                        if (result.codeResult && result.codeResult.code) {
-                            console.log("Detected code:", result.codeResult.code);
-                        }
+                        console.log("Invalid or incorrect barcode:", code);
                     }
                 });
             } catch (error) {
@@ -155,6 +129,13 @@
                 outputElement.textContent = "Error accessing the camera or initializing scanner.";
                 outputElement.classList.add("error");
             }
+        }
+
+        // Function to add a scanned barcode to the list
+        function addBarcodeToList(barcode) {
+            const listItem = document.createElement("li");
+            listItem.textContent = barcode;
+            barcodeListElement.appendChild(listItem);
         }
 
         // Run the initialization when the page loads
