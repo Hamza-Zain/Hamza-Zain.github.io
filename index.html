@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BarcodeScanner.js v2</title>
+    <title>TensorFlow.js Barcode Scanner v2</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,7 +12,7 @@
         }
         video {
             width: 100%;
-            max-width: 640px;
+            max-width: 400px;
             border: 2px solid #ccc;
             border-radius: 5px;
             margin-bottom: 10px;
@@ -23,95 +23,64 @@
             font-weight: bold;
             color: #333;
         }
-        ul {
-            list-style-type: none;
-            padding: 0;
-        }
-        li {
-            background: #f9f9f9;
-            margin: 5px 0;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            text-align: left;
+        .error {
+            color: red;
         }
     </style>
 </head>
 <body>
-    <h1>BarcodeScanner.js v2</h1>
+    <h1>TensorFlow.js Barcode Scanner v2</h1>
     <video id="video" autoplay muted playsinline></video>
-    <ul id="barcodeList"></ul>
-    <div id="output">Initializing barcode scanner...</div>
-
-    <!-- BarcodeScanner.js Script -->
-    <script src="https://unpkg.com/@zxing/library@0.18.0/dist/index.min.js"></script>
+    <div id="output">Initializing camera...</div>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vision"></script>
     <script>
         const videoElement = document.getElementById('video');
         const outputElement = document.getElementById('output');
-        const barcodeListElement = document.getElementById('barcodeList');
-        const scannedBarcodes = new Set(); // To keep track of scanned barcodes
-
-        // Initialize ZXing barcode scanner
-        const codeReader = new ZXing.BrowserMultiFormatReader();
-
-        // Function to initialize the camera and start scanning
-        async function initializeScanner() {
+        
+        async function initCamera() {
             try {
-                // Access available video devices
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                console.log('Devices found: ', devices);
-                const backCamera = devices.find(device => device.kind === 'videoinput' && device.label.toLowerCase().includes('back'));
-                console.log('Back Camera found: ', backCamera);
-
-                const constraints = backCamera
-                    ? { video: { deviceId: { exact: backCamera.deviceId } } }
-                    : { video: { facingMode: "environment" } };
-
-                // Request the video stream and set it to the video element
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                 videoElement.srcObject = stream;
-
-                // Start barcode scanning
-                startBarcodeScanning(stream);
+                videoElement.play();
+                outputElement.textContent = "Camera initialized, start scanning barcodes...";
             } catch (error) {
-                console.error("Error accessing camera:", error);
+                console.error('Error accessing the camera: ', error);
                 outputElement.textContent = "Error accessing the camera.";
                 outputElement.classList.add("error");
             }
         }
 
-        // Function to start scanning barcodes
-        function startBarcodeScanning(stream) {
-            // Decode barcodes from the video stream
-            codeReader.decodeFromVideoDevice(null, videoElement, (result, err) => {
-                if (result) {
-                    const barcode = result.getText();
+        async function loadModel() {
+            const modelUrl = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-models/coco-ssd';
+            const model = await tf.vision.loadCOCOSSDModel(modelUrl);
+            return model;
+        }
 
-                    // Ensure no duplicates are added
-                    if (!scannedBarcodes.has(barcode)) {
-                        scannedBarcodes.add(barcode);
-                        addBarcodeToList(barcode);
+        async function detectObjects(model) {
+            const predictObjects = async () => {
+                const frame = tf.browser.fromPixels(videoElement);
+                const predictions = await model.detect(frame);
+                frame.dispose();  // Dispose of the tensor to free up memory
+
+                outputElement.textContent = "Detected objects: " + predictions.length;
+
+                predictions.forEach((prediction) => {
+                    if (prediction.class === "barcode") {  // Replace with your barcode class if custom trained
+                        outputElement.textContent += ` Barcode detected with confidence: ${prediction.score.toFixed(2)}`;
                     }
-                }
-                if (err) {
-                    console.error("Barcode scanning error:", err);
-                }
-            });
+                });
+            };
 
-            outputElement.textContent = "Point the camera at a barcode!";
+            setInterval(predictObjects, 500);
         }
 
-        // Function to add scanned barcode to the list
-        function addBarcodeToList(barcode) {
-            const listItem = document.createElement("li");
-            listItem.textContent = barcode;
-            barcodeListElement.appendChild(listItem);
-        }
-
-        // Initialize scanner when the page loads
-        window.onload = function() {
-            initializeScanner();
+        videoElement.onplaying = async () => {
+            const model = await loadModel();
+            detectObjects(model);
         };
+
+        window.onload = initCamera;
     </script>
 </body>
 </html>
