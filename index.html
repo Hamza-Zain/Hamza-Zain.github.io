@@ -37,21 +37,29 @@
         const videoElement = document.getElementById('video');
         const outputElement = document.getElementById('output');
 
-        async function testCamera() {
-            try {
-                // Request camera stream using the back camera
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: "environment" }, // Use back camera
-                });
-                // Assign the stream to the video element
-                videoElement.srcObject = stream;
-                outputElement.textContent = "Camera is working. Point it at a barcode!";
-            } catch (error) {
-                console.error("Camera access error:", error);
-                outputElement.textContent = "Error accessing the camera. Check permissions.";
-                outputElement.classList.add("error");
-            }
-        }
+async function testCamera() {
+    try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        console.log("Available devices:", devices);
+
+        // Find a video input device labeled as the back camera
+        const backCamera = devices.find(
+            (device) => device.kind === "videoinput" && device.label.toLowerCase().includes("back")
+        );
+
+        const constraints = backCamera
+            ? { video: { deviceId: { exact: backCamera.deviceId } } }
+            : { video: { facingMode: "environment" } }; // Fallback if no back camera is explicitly found
+
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        videoElement.srcObject = stream;
+        outputElement.textContent = "Camera is working. Point it at a barcode!";
+    } catch (error) {
+        console.error("Camera access error:", error);
+        outputElement.textContent = "Error accessing the camera. Check permissions.";
+        outputElement.classList.add("error");
+    }
+}
 
         // Run the test when the page loads
         testCamera();
