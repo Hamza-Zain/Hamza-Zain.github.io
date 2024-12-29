@@ -26,9 +26,10 @@
         .error {
             color: red;
         }
-        ul {
-            list-style-type: none;
+        ol {
+            list-style-type: decimal;
             padding: 0;
+            margin: 0;
         }
         li {
             background: #f9f9f9;
@@ -38,18 +39,26 @@
             border-radius: 5px;
             text-align: left;
         }
+        #latestBarcode {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #4CAF50;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
     <h1>Continuous Barcode Scanner</h1>
     <video id="video" autoplay muted playsinline></video>
-    <ul id="barcodeList"></ul>
+    <div id="latestBarcode">No barcode scanned yet.</div>
+    <ol id="barcodeList"></ol>
     <div id="output">Initializing barcode scanner...</div>
     <script>
         const videoElement = document.getElementById('video');
         const outputElement = document.getElementById('output');
         const barcodeListElement = document.getElementById('barcodeList');
+        const latestBarcodeElement = document.getElementById('latestBarcode');
         const scannedBarcodes = new Set(); // To keep track of already scanned barcodes
 
         // Function to validate EAN-13 barcodes
@@ -118,7 +127,7 @@
                     if (code.length === 13 && validateEAN13(code)) {
                         if (!scannedBarcodes.has(code)) {
                             scannedBarcodes.add(code); // Track unique barcodes
-                            addBarcodeToList(code); // Display barcode
+                            updateUIWithBarcode(code); // Update UI with the scanned barcode
                         }
                     } else {
                         console.log("Invalid or incorrect barcode:", code);
@@ -131,11 +140,26 @@
             }
         }
 
-        // Function to add a scanned barcode to the list
-        function addBarcodeToList(barcode) {
+        // Function to update the UI with a scanned barcode
+        function updateUIWithBarcode(barcode) {
+            // Show the latest barcode at the top
+            latestBarcodeElement.textContent = `Latest Scanned: ${barcode}`;
+
+            // Add the barcode to the top of the numbered list
             const listItem = document.createElement("li");
             listItem.textContent = barcode;
             barcodeListElement.insertBefore(listItem, barcodeListElement.firstChild);
+
+            // Renumber the list
+            renumberList();
+        }
+
+        // Function to renumber the list items
+        function renumberList() {
+            const items = barcodeListElement.querySelectorAll("li");
+            items.forEach((item, index) => {
+                item.textContent = `${index + 1}. ${item.textContent.split('. ')[1] || item.textContent}`;
+            });
         }
 
         // Run the initialization when the page loads
