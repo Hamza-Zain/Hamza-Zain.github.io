@@ -1,6 +1,3 @@
-this one works but not accurate
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -138,7 +135,7 @@ this one works but not accurate
         function addBarcodeToList(barcode) {
             const listItem = document.createElement("li");
             listItem.textContent = barcode;
-            barcodeListElement.appendChild(listItem);
+            barcodeListElement.insertBefore(listItem, barcodeListElement.firstChild);
         }
 
         // Run the initialization when the page loads
