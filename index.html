@@ -54,11 +54,16 @@
     <div id="latestBarcode">No barcode scanned yet.</div>
     <ol id="barcodeList"></ol>
     <div id="output">Initializing barcode scanner...</div>
+    
+    <!-- Add an audio element for the buzzer sound -->
+    <audio id="beepSound" src="https://www.soundjay.com/button/beep-07.mp3"></audio>
+    
     <script>
         const videoElement = document.getElementById('video');
         const outputElement = document.getElementById('output');
         const barcodeListElement = document.getElementById('barcodeList');
         const latestBarcodeElement = document.getElementById('latestBarcode');
+        const beepSound = document.getElementById('beepSound'); // Reference to the audio element
         const scannedBarcodes = new Set(); // To keep track of already scanned barcodes
 
         // Function to validate EAN-13 barcodes
@@ -152,6 +157,10 @@
 
             // Renumber the list
             renumberList();
+
+            // Play the beep sound
+            beepSound.currentTime = 0; // Reset sound to start
+            beepSound.play();
         }
 
         // Function to renumber the list items
