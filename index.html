@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Camera Access Latest 1</title>
+    <title>Barcode Scanner</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -27,47 +27,73 @@
             color: red;
         }
     </style>
+    <!-- Add QuaggaJS via CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Camera Access Test Latest 1</h1>
+    <h1>Barcode Scanner</h1>
     <video id="video" autoplay muted playsinline></video>
-    <div id="output">Initializing camera...</div>
+    <div id="output">Initializing barcode scanner...</div>
     <script>
-        // Video element and output message element
         const videoElement = document.getElementById('video');
         const outputElement = document.getElementById('output');
 
-        async function testCamera() {
+        async function initializeCameraAndScanner() {
             try {
-                // Log available devices to identify camera options
+                // Find the back camera
                 const devices = await navigator.mediaDevices.enumerateDevices();
-                console.log("Available devices:", devices);
-
-                // Find the back camera explicitly, if possible
                 const backCamera = devices.find(
                     (device) => device.kind === "videoinput" && device.label.toLowerCase().includes("back")
                 );
 
-                // Use the back camera or fallback to environment-facing camera
                 const constraints = backCamera
                     ? { video: { deviceId: { exact: backCamera.deviceId } } }
                     : { video: { facingMode: "environment" } };
 
                 // Request the video stream
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
-
-                // Set the video stream to the video element
                 videoElement.srcObject = stream;
-                outputElement.textContent = "Camera is working. Point it at a barcode!";
+
+                // Initialize QuaggaJS
+                Quagga.init({
+                    inputStream: {
+                        name: "Live",
+                        type: "LiveStream",
+                        target: videoElement, // Use video element as input
+                        constraints: constraints.video,
+                    },
+                    decoder: {
+                        readers: ["code_128_reader", "ean_reader", "ean_8_reader", "upc_reader"], // Add desired barcode types
+                    },
+                }, function (err) {
+                    if (err) {
+                        console.error("Quagga initialization failed:", err);
+                        outputElement.textContent = "Error initializing barcode scanner.";
+                        outputElement.classList.add("error");
+                        return;
+                    }
+                    Quagga.start();
+                    outputElement.textContent = "Point your camera at a barcode.";
+                });
+
+                // Listen for barcode detection
+                Quagga.onDetected((data) => {
+                    const code = data.codeResult.code;
+                    outputElement.textContent = `Barcode detected: ${code}`;
+                    console.log("Detected barcode:", code);
+
+                    // Stop scanning after detecting a barcode (optional)
+                    Quagga.stop();
+                });
             } catch (error) {
-                console.error("Camera access error:", error);
-                outputElement.textContent = "Error accessing the camera. Check permissions.";
+                console.error("Error accessing camera or initializing scanner:", error);
+                outputElement.textContent = "Error accessing the camera or initializing scanner.";
                 outputElement.classList.add("error");
             }
         }
 
-        // Run the test when the page loads
-        testCamera();
+        // Run the initialization when the page loads
+        initializeCameraAndScanner();
     </script>
 </body>
 </html>
