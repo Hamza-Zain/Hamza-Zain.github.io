@@ -1,89 +1,23 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TensorFlow.js Barcode Scanner v3</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
-        }
-        video {
-            width: 100%;
-            max-width: 400px;
-            border: 2px solid #ccc;
-            border-radius: 5px;
-            margin-bottom: 10px;
-        }
-        #output {
-            margin-top: 10px;
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #333;
-        }
-        .error {
-            color: red;
-        }
-    </style>
+  <title>ZXing Barcode Scanner</title>
+  <script src="https://unpkg.com/@zxing/library@latest"></script>
 </head>
 <body>
-    <h1>TensorFlow.js Barcode Scanner v3</h1>
-    <video id="video" autoplay muted playsinline></video>
-    <div id="output">Initializing camera...</div>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script>
-        const videoElement = document.getElementById('video');
-        const outputElement = document.getElementById('output');
-        
-        async function initCamera() {
-            try {
-                // Request camera access
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                videoElement.srcObject = stream;
-                videoElement.play();
-                outputElement.textContent = "Camera initialized, start scanning barcodes...";
-            } catch (error) {
-                console.error('Error accessing the camera: ', error);
-                outputElement.textContent = "Error accessing the camera.";
-                outputElement.classList.add("error");
-            }
-        }
+  <video id="video" width="300" height="200" style="border: 1px solid gray"></video>
+  <script>
+    const codeReader = new ZXing.BrowserBarcodeReader();
+    const videoElement = document.getElementById('video');
 
-        async function loadModel() {
-            // Load a barcode-specific model from TensorFlow Hub (barcode model URL will be custom)
-            const modelUrl = 'YOUR_MODEL_URL'; // Replace with the barcode-specific model URL
-            const model = await tf.loadGraphModel(modelUrl);
-            return model;
-        }
-
-        async function detectBarcode(model) {
-            const detectFrame = async () => {
-                const frame = tf.browser.fromPixels(videoElement);
-                const input = frame.expandDims(0); // Add batch dimension
-                const predictions = await model.executeAsync(input);
-                
-                // Post-process the model's predictions and visualize
-                outputElement.textContent = "Detected: " + predictions.length;
-
-                // Loop through predictions, and output barcode details
-                predictions.forEach(prediction => {
-                    outputElement.textContent += ` Barcode: ${prediction.class}, Confidence: ${prediction.score}`;
-                });
-
-                frame.dispose(); // Dispose of tensor to free up memory
-            };
-
-            setInterval(detectFrame, 500); // Detect every 500ms
-        }
-
-        videoElement.onplaying = async () => {
-            const model = await loadModel();
-            detectBarcode(model);
-        };
-
-        window.onload = initCamera;
-    </script>
+    codeReader.decodeFromVideoDevice(null, videoElement, (result, err) => {
+      if (result) {
+        console.log(result.text);
+      }
+      if (err && !(err instanceof ZXing.NotFoundException)) {
+        console.error(err);
+      }
+    });
+  </script>
 </body>
 </html>
