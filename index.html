@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ML Kit Barcode Scanner</title>
+    <title>ML Kit Barcode Scanner v2</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -39,7 +39,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest"></script>
 </head>
 <body>
-    <h1>ML Kit Barcode Scanner</h1>
+    <h1>ML Kit Barcode Scanner v2</h1>
     <video id="video" autoplay muted playsinline></video>
     <ul id="barcodeList"></ul>
     <div id="output">Initializing barcode scanner...</div>
@@ -77,9 +77,16 @@
 
                 // Process video frames continuously
                 const processVideoFrame = async () => {
-                    const frame = videoElement;
-                    if (frame.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-                        const results = await vision.detect(frame);
+                    if (videoElement.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+                        const canvas = document.createElement("canvas");
+                        canvas.width = videoElement.videoWidth;
+                        canvas.height = videoElement.videoHeight;
+                        const ctx = canvas.getContext("2d");
+                        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const results = await vision.detect(imageData);
+
                         if (results && results.barcodes) {
                             results.barcodes.forEach((barcode) => {
                                 const code = barcode.rawValue;
