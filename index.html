@@ -67,7 +67,7 @@
 
         async function initializeBarcodeScanner() {
             try {
-                // Load the BarcodeScanner from MediaPipe Tasks
+                // Initialize the BarcodeScanner from MediaPipe Tasks
                 const BarcodeScanner = window.mediapipe.tasks.vision.BarcodeScanner;
                 const vision = await BarcodeScanner.createFromOptions({
                     baseOptions: {
@@ -77,19 +77,20 @@
 
                 // Process video frames continuously
                 const processVideoFrame = async () => {
-                    if (videoElement.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-                        const videoFrame = videoElement.captureStream().getVideoTracks()[0];
-                        const results = vision.detect(videoFrame);
-
-                        results.barcodes.forEach((barcode) => {
-                            const code = barcode.rawValue;
-                            if (!scannedBarcodes.has(code)) {
-                                scannedBarcodes.add(code);
-                                addBarcodeToList(code);
-                            }
-                        });
+                    const frame = videoElement;
+                    if (frame.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+                        const results = await vision.detect(frame);
+                        if (results && results.barcodes) {
+                            results.barcodes.forEach((barcode) => {
+                                const code = barcode.rawValue;
+                                if (!scannedBarcodes.has(code)) {
+                                    scannedBarcodes.add(code);
+                                    addBarcodeToList(code);
+                                }
+                            });
+                        }
                     }
-                    requestAnimationFrame(processVideoFrame);
+                    requestAnimationFrame(processVideoFrame); // Keep processing frames
                 };
 
                 processVideoFrame();
