@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TensorFlow Barcode Scanner v1</title>
+    <title>TensorFlow Barcode Scanner v2</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -49,7 +49,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
 </head>
 <body>
-    <h1>TensorFlow Barcode Scanner v1</h1>
+    <h1>TensorFlow Barcode Scanner v2</h1>
     <video id="video" autoplay muted playsinline></video>
     <ul id="barcodeList"></ul>
     <div id="output">Initializing barcode scanner...</div>
@@ -67,9 +67,15 @@
 
         // Load the COCO-SSD model
         async function loadModel() {
-            model = await cocoSsd.load();
-            outputElement.textContent = "Model loaded! Ready to scan barcodes.";
-            startCamera();
+            try {
+                model = await cocoSsd.load();
+                outputElement.textContent = "Model loaded! Ready to scan barcodes.";
+                startCamera();
+            } catch (error) {
+                console.error("Error loading model:", error);
+                outputElement.textContent = "Error loading model.";
+                outputElement.classList.add("error");
+            }
         }
 
         // Initialize the camera and start streaming
@@ -89,6 +95,7 @@
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 videoElement.srcObject = stream;
 
+                // Wait for video metadata to load
                 videoElement.onloadedmetadata = () => {
                     canvasElement.width = videoElement.videoWidth;
                     canvasElement.height = videoElement.videoHeight;
@@ -104,13 +111,11 @@
 
         // Detect objects in the video feed
         async function detectObjects() {
-            // Perform object detection
             const predictions = await model.detect(videoElement);
 
             // Clear the canvas
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
-            // Draw detected objects on the canvas
             predictions.forEach(prediction => {
                 if (prediction.class === "cell phone") {
                     const { left, top, right, bottom } = prediction.bbox;
@@ -124,7 +129,7 @@
                     canvasCtx.stroke();
                     canvasCtx.fillText(prediction.class, left, top > 10 ? top - 5 : 10);
 
-                    // Here you could add barcode detection logic or any custom actions
+                    // Example: adding the barcode as a scanned item
                     const barcode = prediction.class;
                     if (!scannedBarcodes.has(barcode)) {
                         scannedBarcodes.add(barcode); // Track unique barcodes
