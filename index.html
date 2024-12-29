@@ -1,36 +1,113 @@
-<script src="https://www.dynamsoft.com/libs/dbr.js"></script>
-<script>
-    const videoElement = document.getElementById('video');
-    const outputElement = document.getElementById('output');
-    const barcodeListElement = document.getElementById('barcodeList');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BarcodeScanner.js v1</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        video {
+            width: 100%;
+            max-width: 640px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        #output {
+            margin-top: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background: #f9f9f9;
+            margin: 5px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <h1>BarcodeScanner.js v1</h1>
+    <video id="video" autoplay muted playsinline></video>
+    <ul id="barcodeList"></ul>
+    <div id="output">Initializing barcode scanner...</div>
 
-    // Initialize Dynamsoft Barcode Reader
-    Dynamsoft.BarcodeReader.loadWasm();
-    
-    const scanner = new Dynamsoft.BarcodeReader();
+    <!-- BarcodeScanner.js Script -->
+    <script src="https://unpkg.com/@zxing/library@0.18.0/dist/index.min.js"></script>
+    <script>
+        const videoElement = document.getElementById('video');
+        const outputElement = document.getElementById('output');
+        const barcodeListElement = document.getElementById('barcodeList');
+        const scannedBarcodes = new Set(); // To keep track of scanned barcodes
 
-    // Start video capture
-    async function startScanning() {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        videoElement.srcObject = stream;
-        
-        // Start scanning when the video feed is available
-        const videoTrack = stream.getVideoTracks()[0];
-        const videoCapture = new VideoCapture(videoTrack);
+        // Initialize ZXing barcode scanner
+        const codeReader = new ZXing.BrowserMultiFormatReader();
 
-        setInterval(async () => {
-            const results = await scanner.decode(videoCapture);
-            if (results.length > 0) {
-                addBarcodeToList(results[0].BarcodeText);
+        // Function to initialize the camera and start scanning
+        async function initializeScanner() {
+            try {
+                // Access available video devices
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const backCamera = devices.find(device => device.kind === 'videoinput' && device.label.toLowerCase().includes('back'));
+
+                const constraints = backCamera
+                    ? { video: { deviceId: { exact: backCamera.deviceId } } }
+                    : { video: { facingMode: "environment" } };
+
+                // Request the video stream and set it to the video element
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                videoElement.srcObject = stream;
+
+                // Start barcode scanning
+                startBarcodeScanning(stream);
+            } catch (error) {
+                console.error("Error accessing camera:", error);
+                outputElement.textContent = "Error accessing the camera.";
+                outputElement.classList.add("error");
             }
-        }, 100);
-    }
+        }
 
-    function addBarcodeToList(barcode) {
-        const listItem = document.createElement("li");
-        listItem.textContent = barcode;
-        barcodeListElement.appendChild(listItem);
-    }
+        // Function to start scanning barcodes
+        function startBarcodeScanning(stream) {
+            // Decode barcodes from the video stream
+            codeReader.decodeFromVideoDevice(null, videoElement, (result, err) => {
+                if (result) {
+                    const barcode = result.getText();
 
-    startScanning();
-</script>
+                    // Ensure no duplicates are added
+                    if (!scannedBarcodes.has(barcode)) {
+                        scannedBarcodes.add(barcode);
+                        addBarcodeToList(barcode);
+                    }
+                }
+                if (err) {
+                    console.error("Barcode scanning error:", err);
+                }
+            });
+
+            outputElement.textContent = "Point the camera at a barcode!";
+        }
+
+        // Function to add scanned barcode to the list
+        function addBarcodeToList(barcode) {
+            const listItem = document.createElement("li");
+            listItem.textContent = barcode;
+            barcodeListElement.appendChild(listItem);
+        }
+
+        // Initialize scanner when the page loads
+        initializeScanner();
+    </script>
+</body>
+</html>
