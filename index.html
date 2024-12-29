@@ -1,17 +1,41 @@
-<script>
-    const videoElement = document.getElementById('video');
-    const outputElement = document.getElementById('output');
+async function startScanner() {
+    try {
+        // Initialize ZXing code reader
+        const codeReader = new ZXing.BrowserQRCodeReader();
 
-    async function testCamera() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            videoElement.srcObject = stream;
-            outputElement.textContent = "Camera is working.";
-        } catch (error) {
-            console.error("Camera error:", error);
-            outputElement.textContent = "Error accessing the camera.";
+        // List video input devices
+        const videoInputDevices = await codeReader.listVideoInputDevices();
+
+        if (videoInputDevices.length === 0) {
+            outputElement.textContent = "No video devices found.";
+            return;
         }
-    }
 
-    testCamera();
-</script>
+        // Automatically select the back camera if available
+        const backCamera = videoInputDevices.find(device =>
+            device.label.toLowerCase().includes('back')
+        );
+        const selectedDeviceId = backCamera ? backCamera.deviceId : videoInputDevices[0].deviceId;
+
+        // Start decoding video from the selected device
+        await codeReader.decodeFromVideoDevice(
+            selectedDeviceId,
+            videoElement,
+            (result, err) => {
+                if (result) {
+                    outputElement.textContent = `Barcode: ${result.text}`;
+                    console.log("Barcode scanned:", result.text);
+                } else if (err && !(err instanceof ZXing.NotFoundException)) {
+                    console.error("Scanning error:", err);
+                    outputElement.textContent = "Error during scanning. Check console.";
+                }
+            }
+        );
+    } catch (error) {
+        console.error("Error initializing scanner:", error);
+        outputElement.textContent = "Error initializing scanner. Check console.";
+    }
+}
+
+// Start the scanner when the page loads
+startScanner();
