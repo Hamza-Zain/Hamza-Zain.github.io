@@ -30,36 +30,41 @@
 </head>
 <body>
     <h1>Camera Access Test</h1>
-    <video id="video" autoplay muted></video>
+    <video id="video" autoplay muted playsinline></video>
     <div id="output">Initializing camera...</div>
     <script>
-        // Camera test script
+        // Video element and output message element
         const videoElement = document.getElementById('video');
         const outputElement = document.getElementById('output');
 
-async function testCamera() {
-    try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        console.log("Available devices:", devices);
+        async function testCamera() {
+            try {
+                // Log available devices to identify camera options
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                console.log("Available devices:", devices);
 
-        // Find a video input device labeled as the back camera
-        const backCamera = devices.find(
-            (device) => device.kind === "videoinput" && device.label.toLowerCase().includes("back")
-        );
+                // Find the back camera explicitly, if possible
+                const backCamera = devices.find(
+                    (device) => device.kind === "videoinput" && device.label.toLowerCase().includes("back")
+                );
 
-        const constraints = backCamera
-            ? { video: { deviceId: { exact: backCamera.deviceId } } }
-            : { video: { facingMode: "environment" } }; // Fallback if no back camera is explicitly found
+                // Use the back camera or fallback to environment-facing camera
+                const constraints = backCamera
+                    ? { video: { deviceId: { exact: backCamera.deviceId } } }
+                    : { video: { facingMode: "environment" } };
 
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        videoElement.srcObject = stream;
-        outputElement.textContent = "Camera is working. Point it at a barcode!";
-    } catch (error) {
-        console.error("Camera access error:", error);
-        outputElement.textContent = "Error accessing the camera. Check permissions.";
-        outputElement.classList.add("error");
-    }
-}
+                // Request the video stream
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+                // Set the video stream to the video element
+                videoElement.srcObject = stream;
+                outputElement.textContent = "Camera is working. Point it at a barcode!";
+            } catch (error) {
+                console.error("Camera access error:", error);
+                outputElement.textContent = "Error accessing the camera. Check permissions.";
+                outputElement.classList.add("error");
+            }
+        }
 
         // Run the test when the page loads
         testCamera();
