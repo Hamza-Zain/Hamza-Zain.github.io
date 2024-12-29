@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TensorFlow.js Barcode Scanner v2</title>
+    <title>TensorFlow.js Barcode Scanner v3</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -29,17 +29,17 @@
     </style>
 </head>
 <body>
-    <h1>TensorFlow.js Barcode Scanner v2</h1>
+    <h1>TensorFlow.js Barcode Scanner v3</h1>
     <video id="video" autoplay muted playsinline></video>
     <div id="output">Initializing camera...</div>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vision"></script>
     <script>
         const videoElement = document.getElementById('video');
         const outputElement = document.getElementById('output');
         
         async function initCamera() {
             try {
+                // Request camera access
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                 videoElement.srcObject = stream;
                 videoElement.play();
@@ -52,32 +52,35 @@
         }
 
         async function loadModel() {
-            const modelUrl = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-models/coco-ssd';
-            const model = await tf.vision.loadCOCOSSDModel(modelUrl);
+            // Load a barcode-specific model from TensorFlow Hub (barcode model URL will be custom)
+            const modelUrl = 'YOUR_MODEL_URL'; // Replace with the barcode-specific model URL
+            const model = await tf.loadGraphModel(modelUrl);
             return model;
         }
 
-        async function detectObjects(model) {
-            const predictObjects = async () => {
+        async function detectBarcode(model) {
+            const detectFrame = async () => {
                 const frame = tf.browser.fromPixels(videoElement);
-                const predictions = await model.detect(frame);
-                frame.dispose();  // Dispose of the tensor to free up memory
+                const input = frame.expandDims(0); // Add batch dimension
+                const predictions = await model.executeAsync(input);
+                
+                // Post-process the model's predictions and visualize
+                outputElement.textContent = "Detected: " + predictions.length;
 
-                outputElement.textContent = "Detected objects: " + predictions.length;
-
-                predictions.forEach((prediction) => {
-                    if (prediction.class === "barcode") {  // Replace with your barcode class if custom trained
-                        outputElement.textContent += ` Barcode detected with confidence: ${prediction.score.toFixed(2)}`;
-                    }
+                // Loop through predictions, and output barcode details
+                predictions.forEach(prediction => {
+                    outputElement.textContent += ` Barcode: ${prediction.class}, Confidence: ${prediction.score}`;
                 });
+
+                frame.dispose(); // Dispose of tensor to free up memory
             };
 
-            setInterval(predictObjects, 500);
+            setInterval(detectFrame, 500); // Detect every 500ms
         }
 
         videoElement.onplaying = async () => {
             const model = await loadModel();
-            detectObjects(model);
+            detectBarcode(model);
         };
 
         window.onload = initCamera;
