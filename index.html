@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuaggaJS Barcode Scanner v3</title>
+    <title>ZXing Barcode Scanner v1</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -36,27 +36,32 @@
             text-align: left;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+    <script src="https://unpkg.com/@zxing/library@0.18.7/dist/index.min.js"></script>
 </head>
 <body>
-    <h1>QuaggaJS Barcode Scanner v3</h1>
+    <h1>ZXing Barcode Scanner v1</h1>
     <video id="video" autoplay muted playsinline></video>
     <ul id="barcodeList"></ul>
-    <div id="output">Initializing barcode scanner...</div>
+    <div id="output">Initializing scanner...</div>
+
     <script>
         const videoElement = document.getElementById('video');
         const outputElement = document.getElementById('output');
         const barcodeListElement = document.getElementById('barcodeList');
         const scannedBarcodes = new Set(); // To avoid duplicate barcodes
 
-        // Initialize the video feed and QuaggaJS
+        // Initialize ZXing barcode reader
+        const codeReader = new ZXing.BrowserMultiFormatReader();
+
         function startScanner() {
             outputElement.textContent = "Initializing camera...";
+
+            // Get the camera and start video feed
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
                 .then(function (stream) {
                     videoElement.srcObject = stream;
                     outputElement.textContent = "Scanning for barcodes...";
-                    startQuagga();
+                    startZXing();
                 })
                 .catch(function (err) {
                     console.error('Camera access denied:', err);
@@ -64,43 +69,27 @@
                 });
         }
 
-        // Start QuaggaJS barcode scanner
-        function startQuagga() {
-            Quagga.init({
-                inputStream: {
-                    type: "LiveStream",
-                    target: videoElement, // Target the video element
-                    constraints: {
-                        facingMode: "environment"
+        // Start scanning using ZXing library
+        function startZXing() {
+            codeReader
+                .decodeFromVideoDevice(null, videoElement, (result, err) => {
+                    if (err) {
+                        console.error(err);
+                        return;
                     }
-                },
-                decoder: {
-                    readers: ["code_128_reader", "ean_reader", "ean_8_reader", "upc_reader", "qr_code_reader"] // Add more barcode formats as needed
-                }
-            }, function (err) {
-                if (err) {
-                    console.error(err);
-                    outputElement.textContent = 'Error initializing scanner.';
-                    return;
-                }
 
-                Quagga.start();
-                processBarcode();
-            });
-        }
-
-        // Continuously process the barcode results
-        function processBarcode() {
-            Quagga.onDetected(function (result) {
-                const barcode = result.codeResult.code;
-                if (!scannedBarcodes.has(barcode)) {
-                    scannedBarcodes.add(barcode);
-                    addBarcodeToList(barcode);
-                }
-            });
-
-            // Continually process frames for barcode scanning
-            requestAnimationFrame(processBarcode);
+                    if (result) {
+                        const barcode = result.text;
+                        if (!scannedBarcodes.has(barcode)) {
+                            scannedBarcodes.add(barcode);
+                            addBarcodeToList(barcode);
+                        }
+                    }
+                })
+                .catch(function (err) {
+                    console.error('Error with ZXing scanner:', err);
+                    outputElement.textContent = 'Error starting the scanner.';
+                });
         }
 
         // Display the barcode in the list
@@ -110,7 +99,7 @@
             barcodeListElement.appendChild(listItem);
         }
 
-        // Initialize the scanner when the page loads
+        // Start scanner when the page loads
         startScanner();
     </script>
 </body>
