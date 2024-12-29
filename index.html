@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ML Kit Barcode Scanner v2</title>
+    <title>QuaggaJS Barcode Scanner v3</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -36,10 +36,10 @@
             text-align: left;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
 </head>
 <body>
-    <h1>ML Kit Barcode Scanner v2</h1>
+    <h1>QuaggaJS Barcode Scanner v3</h1>
     <video id="video" autoplay muted playsinline></video>
     <ul id="barcodeList"></ul>
     <div id="output">Initializing barcode scanner...</div>
@@ -47,83 +47,71 @@
         const videoElement = document.getElementById('video');
         const outputElement = document.getElementById('output');
         const barcodeListElement = document.getElementById('barcodeList');
-        const scannedBarcodes = new Set(); // To keep track of already scanned barcodes
+        const scannedBarcodes = new Set(); // To avoid duplicate barcodes
 
-        async function initializeCamera() {
-            try {
-                // Request the environment-facing camera
-                const constraints = {
-                    video: { facingMode: "environment" }
-                };
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                videoElement.srcObject = stream;
-            } catch (error) {
-                console.error("Error accessing camera:", error);
-                outputElement.textContent = "Error accessing the camera. Check permissions.";
-                return false;
-            }
-            return true;
-        }
-
-        async function initializeBarcodeScanner() {
-            try {
-                // Initialize the BarcodeScanner from MediaPipe Tasks
-                const BarcodeScanner = window.mediapipe.tasks.vision.BarcodeScanner;
-                const vision = await BarcodeScanner.createFromOptions({
-                    baseOptions: {
-                        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/vision/barcode_scanner/1/barcode_scanner.task',
-                    }
+        // Initialize the video feed and QuaggaJS
+        function startScanner() {
+            outputElement.textContent = "Initializing camera...";
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+                .then(function (stream) {
+                    videoElement.srcObject = stream;
+                    outputElement.textContent = "Scanning for barcodes...";
+                    startQuagga();
+                })
+                .catch(function (err) {
+                    console.error('Camera access denied:', err);
+                    outputElement.textContent = 'Error accessing camera. Please allow permissions.';
                 });
-
-                // Process video frames continuously
-                const processVideoFrame = async () => {
-                    if (videoElement.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-                        const canvas = document.createElement("canvas");
-                        canvas.width = videoElement.videoWidth;
-                        canvas.height = videoElement.videoHeight;
-                        const ctx = canvas.getContext("2d");
-                        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-
-                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                        const results = await vision.detect(imageData);
-
-                        if (results && results.barcodes) {
-                            results.barcodes.forEach((barcode) => {
-                                const code = barcode.rawValue;
-                                if (!scannedBarcodes.has(code)) {
-                                    scannedBarcodes.add(code);
-                                    addBarcodeToList(code);
-                                }
-                            });
-                        }
-                    }
-                    requestAnimationFrame(processVideoFrame); // Keep processing frames
-                };
-
-                processVideoFrame();
-            } catch (error) {
-                console.error("Error initializing barcode scanner:", error);
-                outputElement.textContent = "Error initializing the barcode scanner.";
-            }
         }
 
+        // Start QuaggaJS barcode scanner
+        function startQuagga() {
+            Quagga.init({
+                inputStream: {
+                    type: "LiveStream",
+                    target: videoElement, // Target the video element
+                    constraints: {
+                        facingMode: "environment"
+                    }
+                },
+                decoder: {
+                    readers: ["code_128_reader", "ean_reader", "ean_8_reader", "upc_reader", "qr_code_reader"] // Add more barcode formats as needed
+                }
+            }, function (err) {
+                if (err) {
+                    console.error(err);
+                    outputElement.textContent = 'Error initializing scanner.';
+                    return;
+                }
+
+                Quagga.start();
+                processBarcode();
+            });
+        }
+
+        // Continuously process the barcode results
+        function processBarcode() {
+            Quagga.onDetected(function (result) {
+                const barcode = result.codeResult.code;
+                if (!scannedBarcodes.has(barcode)) {
+                    scannedBarcodes.add(barcode);
+                    addBarcodeToList(barcode);
+                }
+            });
+
+            // Continually process frames for barcode scanning
+            requestAnimationFrame(processBarcode);
+        }
+
+        // Display the barcode in the list
         function addBarcodeToList(barcode) {
             const listItem = document.createElement("li");
             listItem.textContent = barcode;
             barcodeListElement.appendChild(listItem);
         }
 
-        async function initialize() {
-            outputElement.textContent = "Initializing camera...";
-            const cameraInitialized = await initializeCamera();
-            if (cameraInitialized) {
-                outputElement.textContent = "Initializing barcode scanner...";
-                await initializeBarcodeScanner();
-                outputElement.textContent = "Point your camera at barcodes.";
-            }
-        }
-
-        initialize();
+        // Initialize the scanner when the page loads
+        startScanner();
     </script>
 </body>
 </html>
