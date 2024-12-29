@@ -151,7 +151,7 @@
         function onBarcodeDetected(data) {
             const code = data.codeResult.code;
             if (scannerActive && validateEAN13(code)) {
-                scannerActive = false;
+                scannerActive = false;  // Disable further scanning temporarily
                 pauseScanner();
                 handleDetectedBarcode(code);
             }
@@ -162,7 +162,7 @@
         }
 
         function resumeScanner() {
-            scannerActive = true;
+            scannerActive = true;  // Enable scanning again
             Quagga.start();
         }
 
@@ -210,7 +210,7 @@
             latestBarcodeElement.textContent = "No barcode scanned yet.";
             confirmationButtons.style.display = 'none';
             retryButtons.style.display = 'none';
-            resumeScanner();
+            resumeScanner();  // Restart scanning
         }
 
         initializeScanner();
