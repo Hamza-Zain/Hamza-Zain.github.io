@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcode Scanner</title>
+    <script src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.1"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        video {
+            width: 100%;
+            max-width: 400px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        #output {
+            margin-top: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Barcode Scanner</h1>
+    <video id="video" autoplay muted></video>
+    <div id="output">Scanning...</div>
+    <script>
+        // Import ZXing library
+        const codeReader = new ZXing.BrowserQRCodeReader();
+
+        // Get video element
+        const videoElement = document.getElementById('video');
+        const outputElement = document.getElementById('output');
+
+        // Start video and scan for barcodes
+        async function startScanner() {
+            try {
+                const videoInputDevices = await codeReader.listVideoInputDevices();
+
+                // Automatically select the first available camera (usually back camera)
+                const selectedDeviceId = videoInputDevices[0].deviceId;
+
+                // Start decoding video from the selected device
+                await codeReader.decodeFromVideoDevice(selectedDeviceId, videoElement, (result, err) => {
+                    if (result) {
+                        // Display barcode text when detected
+                        outputElement.textContent = `Barcode: ${result.text}`;
+                        console.log(result.text);
+                    } else if (err) {
+                        // Handle errors during scanning
+                        if (!(err instanceof ZXing.NotFoundException)) {
+                            console.error(err);
+                            outputElement.textContent = "Error during scanning.";
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error("Error starting scanner:", error);
+                outputElement.textContent = "Unable to access the camera.";
+            }
+        }
+
+        // Start the scanner when the page loads
+        startScanner();
+    </script>
+</body>
+</html>
