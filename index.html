@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BarcodeScanner.js v1</title>
+    <title>BarcodeScanner.js v2</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -38,7 +38,7 @@
     </style>
 </head>
 <body>
-    <h1>BarcodeScanner.js v1</h1>
+    <h1>BarcodeScanner.js v2</h1>
     <video id="video" autoplay muted playsinline></video>
     <ul id="barcodeList"></ul>
     <div id="output">Initializing barcode scanner...</div>
@@ -59,7 +59,9 @@
             try {
                 // Access available video devices
                 const devices = await navigator.mediaDevices.enumerateDevices();
+                console.log('Devices found: ', devices);
                 const backCamera = devices.find(device => device.kind === 'videoinput' && device.label.toLowerCase().includes('back'));
+                console.log('Back Camera found: ', backCamera);
 
                 const constraints = backCamera
                     ? { video: { deviceId: { exact: backCamera.deviceId } } }
@@ -107,7 +109,9 @@
         }
 
         // Initialize scanner when the page loads
-        initializeScanner();
+        window.onload = function() {
+            initializeScanner();
+        };
     </script>
 </body>
 </html>
