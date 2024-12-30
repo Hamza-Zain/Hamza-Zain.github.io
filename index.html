@@ -1,122 +1,230 @@
-const resumeButton = document.getElementById('resumeButton'); // New resume button
-
-// Flag to check if scanning is paused
-let isPaused = false;
-
-// Function to pause scanning
-function pauseScanner() {
-    isPaused = true;
-    Quagga.stop(); // Stop the scanner
-    resumeButton.style.display = 'inline-block'; // Show the resume button
-    outputElement.textContent = "Scanning paused. Click 'Resume Scanning' to continue.";
-}
-
-// Function to resume scanning
-function resumeScanner() {
-    isPaused = false;
-    Quagga.start(); // Restart the scanner
-    resumeButton.style.display = 'none'; // Hide the resume button
-    outputElement.textContent = "Scanning resumed. Point your camera at barcodes.";
-}
-
-// Update the barcode detection part to play any audio when a barcode is detected
-Quagga.onDetected((data) => {
-    const code = data.codeResult.code;
-
-    // Play the audio on barcode detection (can be any custom audio file)
-    const detectionSound = new Audio('https://www.soundjay.com/button/beep-07.mp3');
-    detectionSound.play();
-
-    // Multiple frame verification for accuracy
-    if (lastDetected === code) {
-        confirmCounter++;
-        if (confirmCounter >= 3) { // Require detection over 3 frames
-            confirmCounter = 0;
-            processBarcode(code);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Barcode Scanner v3</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
         }
-    } else {
-        lastDetected = code;
-        confirmCounter = 1;
-    }
-});
+        video {
+            width: 100%;
+            max-width: 400px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        #output {
+            margin-top: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+        .error {
+            color: red;
+        }
+        ol {
+            list-style-type: decimal;
+            padding: 0;
+            margin: 0;
+        }
+        li {
+            background: #f9f9f9;
+            margin: 5px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-align: left;
+        }
+        #latestBarcode {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #4CAF50;
+        }
+        #initializeButton, #resumeButton {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            font-size: 1em;
+            color: white;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #initializeButton:focus, #resumeButton:focus {
+            outline: none;
+        }
+        #resumeButton {
+            display: none;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+</head>
+<body>
+    <h1>Enhanced Barcode Scanner v3</h1>
+    <button id="initializeButton">Initialize Scanner</button>
+    <button id="resumeButton">Resume Scanning</button>
+    <video id="video" autoplay muted playsinline></video>
+    <div id="latestBarcode">No barcode scanned yet.</div>
+    <ol id="barcodeList"></ol>
+    <div id="output">Initializing barcode scanner...</div>
+    
+    <!-- Add an audio element for the buzzer sound -->
+    <audio id="beepSound" src="https://www.soundjay.com/button/beep-07.mp3"></audio>
+    
+    <script>
+        const videoElement = document.getElementById('video');
+        const outputElement = document.getElementById('output');
+        const barcodeListElement = document.getElementById('barcodeList');
+        const latestBarcodeElement = document.getElementById('latestBarcode');
+        const beepSound = document.getElementById('beepSound');
+        const initializeButton = document.getElementById('initializeButton');
+        const resumeButton = document.getElementById('resumeButton'); // New resume button
+        let lastDetected = '';
+        let confirmCounter = 0;
+        let isPaused = false; // Flag to check if scanning is paused
 
-// Event listener to resume the scanner
-resumeButton.addEventListener('click', resumeScanner);
+        // Function to validate EAN-13 barcodes
+        function validateEAN13(barcode) {
+            if (!/^\d{13}$/.test(barcode)) return false; // Ensure it's 13 digits
+            const digits = barcode.split("").map(Number);
+            const checksum = digits.pop();
+            const sum = digits.reduce((acc, digit, idx) => acc + digit * (idx % 2 === 0 ? 1 : 3), 0);
+            const calculatedCheck = (10 - (sum % 10)) % 10;
+            return checksum === calculatedCheck;
+        }
 
-// Modify the initializeCameraAndScanner function to include the pause feature
-async function initializeCameraAndScanner() {
-    try {
-        // Hide the initialize button after user interaction
-        initializeButton.style.display = 'none';
+        // Function to pause scanning
+        function pauseScanner() {
+            isPaused = true;
+            Quagga.stop(); // Stop the scanner
+            resumeButton.style.display = 'inline-block'; // Show the resume button
+            outputElement.textContent = "Scanning paused. Click 'Resume Scanning' to continue.";
+        }
 
-        // Find the back camera
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const backCamera = devices.find(
-            (device) => device.kind === "videoinput" && device.label.toLowerCase().includes("back")
-        );
+        // Function to resume scanning
+        function resumeScanner() {
+            isPaused = false;
+            Quagga.start(); // Restart the scanner
+            resumeButton.style.display = 'none'; // Hide the resume button
+            outputElement.textContent = "Scanning resumed. Point your camera at barcodes.";
+        }
 
-        const constraints = backCamera
-            ? { video: { deviceId: { exact: backCamera.deviceId }, width: 1280, height: 720 } }
-            : { video: { facingMode: "environment", width: 1280, height: 720 } };
+        async function initializeCameraAndScanner() {
+            try {
+                // Hide the initialize button after user interaction
+                initializeButton.style.display = 'none';
 
-        // Request the video stream
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        videoElement.srcObject = stream;
+                // Find the back camera
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const backCamera = devices.find(
+                    (device) => device.kind === "videoinput" && device.label.toLowerCase().includes("back")
+                );
 
-        // Initialize QuaggaJS
-        Quagga.init({
-            inputStream: {
-                name: "Live",
-                type: "LiveStream",
-                target: videoElement,
-                constraints
-            },
-            decoder: {
-                readers: ["ean_reader"], // Restrict to the specific barcode type
-            },
-            locator: {
-                patchSize: "large", // More accurate detection
-                halfSample: false
-            },
-            locate: true, // Detect barcodes in varying positions
-            frequency: 10 // Process fewer frames for accuracy
-        }, function (err) {
-            if (err) {
-                console.error("Quagga initialization failed:", err);
-                outputElement.textContent = "Error initializing barcode scanner.";
+                const constraints = backCamera
+                    ? { video: { deviceId: { exact: backCamera.deviceId }, width: 1280, height: 720 } }
+                    : { video: { facingMode: "environment", width: 1280, height: 720 } };
+
+                // Request the video stream
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                videoElement.srcObject = stream;
+
+                // Initialize QuaggaJS
+                Quagga.init({
+                    inputStream: {
+                        name: "Live",
+                        type: "LiveStream",
+                        target: videoElement,
+                        constraints
+                    },
+                    decoder: {
+                        readers: ["ean_reader"], // Restrict to the specific barcode type
+                    },
+                    locator: {
+                        patchSize: "large", // More accurate detection
+                        halfSample: false
+                    },
+                    locate: true, // Detect barcodes in varying positions
+                    frequency: 10 // Process fewer frames for accuracy
+                }, function (err) {
+                    if (err) {
+                        console.error("Quagga initialization failed:", err);
+                        outputElement.textContent = "Error initializing barcode scanner.";
+                        outputElement.classList.add("error");
+                        return;
+                    }
+                    Quagga.start();
+                    outputElement.textContent = "Point your camera at barcodes.";
+                });
+
+                // Listen for barcode detection
+                Quagga.onDetected((data) => {
+                    const code = data.codeResult.code;
+
+                    // Play the audio on barcode detection (can be any custom audio file)
+                    beepSound.currentTime = 0; // Reset sound to start
+                    beepSound.play();
+
+                    // Multiple frame verification for accuracy
+                    if (lastDetected === code) {
+                        confirmCounter++;
+                        if (confirmCounter >= 3) { // Require detection over 3 frames
+                            confirmCounter = 0;
+                            processBarcode(code);
+                        }
+                    } else {
+                        lastDetected = code;
+                        confirmCounter = 1;
+                    }
+                });
+            } catch (error) {
+                console.error("Error accessing camera or initializing scanner:", error);
+                outputElement.textContent = "Error accessing the camera or initializing scanner.";
                 outputElement.classList.add("error");
-                return;
             }
-            Quagga.start();
-            outputElement.textContent = "Point your camera at barcodes.";
-        });
+        }
 
-        // Listen for barcode detection
-        Quagga.onDetected((data) => {
-            const code = data.codeResult.code;
-
-            // Play the audio on barcode detection (can be any custom audio file)
-            const detectionSound = new Audio('https://www.soundjay.com/button/beep-07.mp3');
-            detectionSound.play();
-
-            // Multiple frame verification for accuracy
-            if (lastDetected === code) {
-                confirmCounter++;
-                if (confirmCounter >= 3) { // Require detection over 3 frames
-                    confirmCounter = 0;
-                    processBarcode(code);
-                }
+        // Function to process a confirmed barcode
+        function processBarcode(barcode) {
+            if (validateEAN13(barcode)) {
+                updateUIWithBarcode(barcode);
             } else {
-                lastDetected = code;
-                confirmCounter = 1;
+                console.log("Invalid barcode:", barcode);
             }
-        });
-    } catch (error) {
-        console.error("Error accessing camera or initializing scanner:", error);
-        outputElement.textContent = "Error accessing the camera or initializing scanner.";
-        outputElement.classList.add("error");
-    }
-}
+        }
 
-// Add event listener to initialize the scanner on button click
-initializeButton.addEventListener('click', initializeCameraAndScanner);
+        // Function to update the UI with a scanned barcode
+        function updateUIWithBarcode(barcode) {
+            // Show the latest barcode at the top
+            latestBarcodeElement.textContent = `Latest Scanned: ${barcode}`;
+
+            // Add the barcode to the top of the numbered list
+            const listItem = document.createElement("li");
+            listItem.textContent = barcode;
+            barcodeListElement.insertBefore(listItem, barcodeListElement.firstChild);
+
+            // Renumber the list
+            renumberList();
+        }
+
+        // Function to renumber the list items
+        function renumberList() {
+            const items = barcodeListElement.querySelectorAll("li");
+            items.forEach((item, index) => {
+                item.textContent = `${index + 1}. ${item.textContent.split('. ')[1] || item.textContent}`;
+            });
+        }
+
+        // Add event listener to initialize the scanner on button click
+        initializeButton.addEventListener('click', initializeCameraAndScanner);
+
+        // Add event listener to resume the scanner on button click
+        resumeButton.addEventListener('click', resumeScanner);
+    </script>
+</body>
+</html>
