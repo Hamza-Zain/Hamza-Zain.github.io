@@ -3,25 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Barcode Scanner v2</title>
+    <title>Enhanced Barcode Scanner</title>
     <style>
-        /* (Your existing CSS styles remain unchanged) */
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        video {
+            width: 100%;
+            max-width: 400px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        #output {
+            margin-top: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+        .error {
+            color: red;
+        }
+        ol {
+            list-style-type: decimal;
+            padding: 0;
+            margin: 0;
+        }
+        li {
+            background: #f9f9f9;
+            margin: 5px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-align: left;
+        }
+        #latestBarcode {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #4CAF50;
+        }
+        #initializeButton {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            font-size: 1em;
+            color: white;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #initializeButton:focus {
+            outline: none;
+        }
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        .modal input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .modal button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .modal button.confirm {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .modal button.manual {
+            background-color: #f44336;
+            color: white;
+        }
+        .dimmed {
+            filter: brightness(50%);
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Enhanced Barcode Scanner v2</h1>
+    <h1>Enhanced Barcode Scanner</h1>
     <button id="initializeButton">Initialize Scanner</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
     <ol id="barcodeList"></ol>
     <div id="output">Initializing barcode scanner...</div>
-    <div id="confirmationDialog">
-        <p>Is this barcode correct?</p>
-        <button id="confirmButton" class="confirm">Yes</button>
-        <button id="manualButton" class="manual">No, Enter Manually</button>
-    </div>
+    
+    <!-- Add an audio element for the buzzer sound -->
     <audio id="beepSound" src="https://www.soundjay.com/button/beep-07.mp3"></audio>
+    
+    <!-- Modal for barcode confirmation -->
+    <div class="modal-overlay" id="modalOverlay"></div>
+    <div class="modal" id="modal">
+        <p>Is this barcode correct?</p>
+        <p id="detectedBarcode"></p>
+        <button class="confirm" onclick="confirmBarcode()">Correct</button>
+        <button class="manual" onclick="enterManually()">Enter Manually</button>
+        <div id="manualEntry" style="display: none;">
+            <input type="text" id="manualBarcode" placeholder="Enter barcode manually">
+            <button onclick="submitManualBarcode()">Submit</button>
+        </div>
+    </div>
     
     <script>
         const videoElement = document.getElementById('video');
@@ -30,13 +141,14 @@
         const latestBarcodeElement = document.getElementById('latestBarcode');
         const beepSound = document.getElementById('beepSound');
         const initializeButton = document.getElementById('initializeButton');
-        const confirmationDialog = document.getElementById('confirmationDialog');
-        const confirmButton = document.getElementById('confirmButton');
-        const manualButton = document.getElementById('manualButton');
+        const modal = document.getElementById('modal');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const detectedBarcodeElement = document.getElementById('detectedBarcode');
+        const manualEntryElement = document.getElementById('manualEntry');
+        const manualBarcodeInput = document.getElementById('manualBarcode');
         let lastDetected = '';
         let confirmCounter = 0;
         let currentBarcode = '';
-        let isScannerActive = false;
 
         // Function to validate EAN-13 barcodes
         function validateEAN13(barcode) {
@@ -91,13 +203,12 @@
                         outputElement.classList.add("error");
                         return;
                     }
-                    startScanner();
+                    Quagga.start();
                     outputElement.textContent = "Point your camera at barcodes.";
                 });
 
                 // Listen for barcode detection
                 Quagga.onDetected((data) => {
-                    if (!isScannerActive) return; // Ignore detections if the scanner is paused
                     const code = data.codeResult.code;
 
                     // Multiple frame verification for accuracy
@@ -105,9 +216,7 @@
                         confirmCounter++;
                         if (confirmCounter >= 3) { // Require detection over 3 frames
                             confirmCounter = 0;
-                            pauseScanner();
-                            currentBarcode = code;
-                            showConfirmationDialog();
+                            processBarcode(code);
                         }
                     } else {
                         lastDetected = code;
@@ -121,49 +230,52 @@
             }
         }
 
-        // Function to start the scanner
-        function startScanner() {
-            Quagga.start();
-            isScannerActive = true;
+        // Function to process a confirmed barcode
+        function processBarcode(barcode) {
+            currentBarcode = barcode;
+            showModal(barcode);
         }
 
-        // Function to pause the scanner
-        function pauseScanner() {
-            Quagga.stop();
-            isScannerActive = false;
+        // Function to show the modal
+        function showModal(barcode) {
+            detectedBarcodeElement.textContent = barcode;
+            modal.style.display = 'block';
+            modalOverlay.style.display = 'block';
+            videoElement.classList.add('dimmed');
         }
 
-        // Function to show the confirmation dialog
-        function showConfirmationDialog() {
-            latestBarcodeElement.textContent = `Latest Scanned: ${currentBarcode}`;
-            confirmationDialog.style.display = 'block';
+        // Function to hide the modal
+        function hideModal() {
+            modal.style.display = 'none';
+            modalOverlay.style.display = 'none';
+            videoElement.classList.remove('dimmed');
         }
 
-        // Function to handle confirmation
-        confirmButton.addEventListener('click', () => {
-            confirmationDialog.style.display = 'none';
-            if (validateEAN13(currentBarcode)) {
-                updateUIWithBarcode(currentBarcode);
-            } else {
-                alert("Invalid barcode. Please try again.");
-            }
-            startScanner(); // Resume the scanner
-        });
+        // Function to confirm the detected barcode
+        function confirmBarcode() {
+            updateUIWithBarcode(currentBarcode);
+            hideModal();
+        }
 
-        // Function to handle manual entry
-        manualButton.addEventListener('click', () => {
-            confirmationDialog.style.display = 'none';
-            const manualBarcode = prompt("Please enter the barcode manually:");
-            if (manualBarcode && validateEAN13(manualBarcode)) {
+        // Function to enter barcode manually
+        function enterManually() {
+            manualEntryElement.style.display = 'block';
+        }
+
+        // Function to submit manually entered barcode
+        function submitManualBarcode() {
+            const manualBarcode = manualBarcodeInput.value;
+            if (manualBarcode) {
                 updateUIWithBarcode(manualBarcode);
-            } else {
-                alert("Invalid barcode. Please try again.");
+                hideModal();
             }
-            startScanner(); // Resume the scanner
-        });
+        }
 
         // Function to update the UI with a scanned barcode
         function updateUIWithBarcode(barcode) {
+            // Show the latest barcode at the top
+            latestBarcodeElement.textContent = `Latest Scanned: ${barcode}`;
+
             // Add the barcode to the top of the numbered list
             const listItem = document.createElement("li");
             listItem.textContent = barcode;
