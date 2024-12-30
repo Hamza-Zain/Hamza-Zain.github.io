@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Barcode Scanner</title>
+    <title>Barcode Scanner V2</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -100,6 +100,10 @@
             background-color: #4CAF50;
             color: white;
         }
+        .modal button.rescan {
+            background-color: #2196F3;
+            color: white;
+        }
         .modal button.manual {
             background-color: #f44336;
             color: white;
@@ -111,7 +115,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Enhanced Barcode Scanner</h1>
+    <h1>Barcode Scanner V2</h1>
     <button id="initializeButton">Initialize Scanner</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
@@ -127,6 +131,7 @@
         <p>Is this barcode correct?</p>
         <p id="detectedBarcode"></p>
         <button class="confirm" onclick="confirmBarcode()">Correct</button>
+        <button class="rescan" onclick="rescanBarcode()">Rescan</button>
         <button class="manual" onclick="enterManually()">Enter Manually</button>
         <div id="manualEntry" style="display: none;">
             <input type="text" id="manualBarcode" placeholder="Enter barcode manually">
@@ -257,6 +262,11 @@
             hideModal();
         }
 
+        // Function to rescan the barcode
+        function rescanBarcode() {
+            hideModal();
+        }
+
         // Function to enter barcode manually
         function enterManually() {
             manualEntryElement.style.display = 'block';
@@ -267,6 +277,7 @@
             const manualBarcode = manualBarcodeInput.value;
             if (manualBarcode) {
                 updateUIWithBarcode(manualBarcode);
+                manualBarcodeInput.value = ''; // Clear the input field
                 hideModal();
             }
         }
