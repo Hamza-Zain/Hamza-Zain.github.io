@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Barcode Scanner</title>
+    <title>Enhanced Barcode Scanner v10</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -59,66 +59,68 @@
         #initializeButton:focus {
             outline: none;
         }
+        /* Modal Styling */
         #confirmationModal {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
+            width: 100%;
+            height: 100%;
             background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
             justify-content: center;
             align-items: center;
         }
-        #confirmationModal div {
-            background: white;
+        #confirmationBox {
+            background-color: white;
             padding: 20px;
             border-radius: 5px;
             text-align: center;
         }
         #manualBarcode {
+            display: none;
             margin-top: 10px;
-            padding: 5px;
-            width: 80%;
         }
         #okButton {
+            display: none;
+        }
+        .button {
+            padding: 10px 20px;
             margin-top: 10px;
-            padding: 5px 10px;
             background-color: #4CAF50;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
         }
-        #okButton:focus {
+        .button:focus {
             outline: none;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Enhanced Barcode Scanner</h1>
+    <h1>Enhanced Barcode Scanner v10</h1>
     <button id="initializeButton">Initialize Scanner</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
     <ol id="barcodeList"></ol>
     <div id="output">Initializing barcode scanner...</div>
     
-    <!-- Confirmation Modal for Barcode -->
-    <div id="confirmationModal">
-        <div>
-            <p id="modalBarcode">Barcode detected:</p>
-            <button id="confirmButton">Correct</button>
-            <button id="manualButton">Enter manually</button>
-            <input type="text" id="manualBarcode" style="display:none;" placeholder="Enter barcode">
-            <button id="okButton" style="display:none;">OK</button>
-        </div>
-    </div>
-
     <!-- Add an audio element for the buzzer sound -->
     <audio id="beepSound" src="https://www.soundjay.com/button/beep-07.mp3"></audio>
     
+    <!-- Modal for confirmation -->
+    <div id="confirmationModal">
+        <div id="confirmationBox">
+            <p id="modalBarcode">Barcode detected: </p>
+            <button id="confirmButton" class="button">Correct</button>
+            <button id="manualButton" class="button">Enter Manually</button>
+            <input type="text" id="manualBarcode" placeholder="Enter barcode manually" />
+            <button id="okButton" class="button">OK</button>
+        </div>
+    </div>
+
     <script>
         const videoElement = document.getElementById('video');
         const outputElement = document.getElementById('output');
@@ -221,7 +223,7 @@
                 if (validateEAN13(barcode)) {
                     updateUIWithBarcode(barcode);
                     confirmationModal.style.display = 'none';
-                    Quagga.start();  // Start scanning again
+                    Quagga.start();  // Restart scanning after confirmation
                 } else {
                     console.log("Invalid barcode:", barcode);
                 }
@@ -244,7 +246,7 @@
                     manualBarcodeInput.style.display = 'none';
                     okButton.style.display = 'none';
                     manualButton.style.display = 'block';
-                    Quagga.start();  // Start scanning again
+                    Quagga.start();  // Restart scanning after manual input
                 } else {
                     console.log("Invalid manual barcode:", manualBarcode);
                 }
