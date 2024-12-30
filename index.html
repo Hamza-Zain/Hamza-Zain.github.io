@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Barcode Scanner</title>
+    <title>Enhanced Barcode Scanner v2</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -66,7 +66,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Enhanced Barcode Scanner</h1>
+    <h1>Enhanced Barcode Scanner v2</h1>
     <button id="initializeButton">Initialize Scanner</button>
     <button id="resumeButton">Resume Scanning</button>
     <video id="video" autoplay muted playsinline></video>
@@ -84,10 +84,10 @@
         const latestBarcodeElement = document.getElementById('latestBarcode');
         const beepSound = document.getElementById('beepSound');
         const initializeButton = document.getElementById('initializeButton');
-        const resumeButton = document.getElementById('resumeButton'); // New resume button
+        const resumeButton = document.getElementById('resumeButton'); // Resume scanning button
         let lastDetected = '';
         let confirmCounter = 0;
-        let isPaused = false; // Flag to check if scanning is paused
+        let isPaused = false; // Flag to track if scanning is paused
 
         // Function to validate EAN-13 barcodes
         function validateEAN13(barcode) {
@@ -102,16 +102,16 @@
         // Function to pause scanning
         function pauseScanner() {
             isPaused = true;
-            Quagga.stop(); // Stop the scanner
-            resumeButton.style.display = 'inline-block'; // Show the resume button
+            Quagga.stop(); // Stop Quagga scanning
+            resumeButton.style.display = 'inline-block'; // Show resume button
             outputElement.textContent = "Scanning paused. Click 'Resume Scanning' to continue.";
         }
 
         // Function to resume scanning
         function resumeScanner() {
             isPaused = false;
-            Quagga.start(); // Restart the scanner
-            resumeButton.style.display = 'none'; // Hide the resume button
+            Quagga.start(); // Restart Quagga scanning
+            resumeButton.style.display = 'none'; // Hide resume button
             outputElement.textContent = "Scanning resumed. Point your camera at barcodes.";
         }
 
@@ -225,6 +225,9 @@
 
         // Add event listener to resume the scanner on button click
         resumeButton.addEventListener('click', resumeScanner);
+
+        // Pause the scanner after some time for demonstration purposes (optional)
+        setTimeout(pauseScanner, 5000); // Pause after 5 seconds for demonstration
     </script>
 </body>
 </html>
