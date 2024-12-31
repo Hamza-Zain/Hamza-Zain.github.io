@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner V4</title>
+    <title>Barcode Scanner V4</title> <!-- Updated to V4 -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -108,6 +108,10 @@
             background-color: #f44336;
             color: white;
         }
+        .modal button.cancel {
+            background-color: #9e9e9e; /* Gray color for cancel */
+            color: white;
+        }
         .dimmed {
             filter: brightness(50%);
         }
@@ -115,7 +119,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Barcode Scanner V4</h1>
+    <h1>Barcode Scanner V4</h1> <!-- Updated to V4 -->
     <button id="initializeButton">Initialize Scanner</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
@@ -133,6 +137,7 @@
         <button class="confirm" onclick="confirmBarcode()">Correct</button>
         <button class="rescan" onclick="rescanBarcode()">Rescan</button>
         <button class="manual" onclick="enterManually()">Enter Manually</button>
+        <button class="cancel" onclick="cancelBarcode()">Cancel</button> <!-- New Cancel button -->
         <div id="manualEntry" style="display: none;">
             <input type="text" id="manualBarcode" placeholder="Enter barcode manually">
             <button onclick="submitManualBarcode()">Submit</button>
@@ -289,6 +294,11 @@
 
             // Hide the modal
             hideModal();
+        }
+
+        // Function to handle the "Cancel" button click
+        function cancelBarcode() {
+            hideModal(); // Simply close the modal
         }
 
         // Function to update the UI with a scanned barcode
