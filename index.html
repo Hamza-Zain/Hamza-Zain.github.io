@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner V21</title> <!-- Updated to V21 -->
+    <title>Barcode Scanner V22</title> <!-- Updated to V22 -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -161,7 +161,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Barcode Scanner V21</h1> <!-- Updated to V21 -->
+    <h1>Barcode Scanner V22</h1> <!-- Updated to V22 -->
     <button id="initializeButton">Initialize Scanner</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
@@ -378,6 +378,10 @@
             // Update the barcode info in the modal
             barcodeInfoElement.textContent = `${barcodeType} (${barcodeDigits} digits)`;
 
+            // Play the beep sound
+            beepSound.currentTime = 0; // Reset sound to start
+            beepSound.play();
+
             // Read the barcode digit by digit
             speakBarcodeDigitByDigit(barcode);
 
@@ -449,12 +453,6 @@
             const typeCell = newRow.insertCell(1);
             valueCell.textContent = barcode || "(Empty)";
             typeCell.textContent = barcodeType;
-
-            // Play the beep sound (only if barcode is not empty)
-            if (barcode) {
-                beepSound.currentTime = 0; // Reset sound to start
-                beepSound.play();
-            }
         }
 
         // Add event listener to initialize the scanner on button click
