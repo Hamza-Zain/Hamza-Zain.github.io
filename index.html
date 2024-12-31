@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner V4</title>
+    <title>Barcode Scanner V5</title> <!-- Updated to V5 -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -133,7 +133,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Barcode Scanner V4</h1>
+    <h1>Barcode Scanner V5</h1> <!-- Updated to V5 -->
     <button id="initializeButton">Initialize Scanner</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
@@ -154,7 +154,7 @@
             <button class="manual" onclick="enterManually()">Enter Manually</button>
             <button class="cancel" onclick="cancelBarcode()">Cancel</button>
         </div>
-        <div id="manualEntry" style="display: none;">
+        <div id="manualEntry" style="display: none;"> <!-- Hidden by default -->
             <input type="text" id="manualBarcode" placeholder="Enter barcode manually">
             <button onclick="submitManualBarcode()">Submit</button>
         </div>
@@ -295,7 +295,7 @@
 
         // Function to enter barcode manually
         function enterManually() {
-            manualEntryElement.style.display = 'block';
+            manualEntryElement.style.display = 'block'; // Show the manual entry box
         }
 
         // Function to submit manually entered barcode
