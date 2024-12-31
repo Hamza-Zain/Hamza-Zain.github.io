@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner V5</title> <!-- Updated to V5 -->
+    <title>Barcode Scanner V5</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -83,13 +83,6 @@
             background: rgba(0, 0, 0, 0.5);
             z-index: 999;
         }
-        .modal input {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
         /* Modal button styles */
         .modal button {
             padding: 10px 20px;
@@ -126,6 +119,28 @@
             grid-template-columns: 1fr 1fr; /* Two columns */
             gap: 10px; /* Space between buttons */
         }
+        /* Manual entry box styles */
+        #manualEntry {
+            display: none; /* Hidden by default */
+            grid-column: span 2; /* Span across both columns */
+            margin-top: 10px; /* Add some spacing above the box */
+        }
+        #manualEntry input {
+            width: calc(100% - 22px); /* Full width minus padding */
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #manualEntry button {
+            width: 100%; /* Full width */
+            padding: 10px;
+            background-color: #4CAF50; /* Green */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
         .dimmed {
             filter: brightness(50%);
         }
@@ -133,7 +148,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Barcode Scanner V5</h1> <!-- Updated to V5 -->
+    <h1>Barcode Scanner V5</h1>
     <button id="initializeButton">Initialize Scanner</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
@@ -154,7 +169,7 @@
             <button class="manual" onclick="enterManually()">Enter Manually</button>
             <button class="cancel" onclick="cancelBarcode()">Cancel</button>
         </div>
-        <div id="manualEntry" style="display: none;"> <!-- Hidden by default -->
+        <div id="manualEntry"> <!-- Hidden by default -->
             <input type="text" id="manualBarcode" placeholder="Enter barcode manually">
             <button onclick="submitManualBarcode()">Submit</button>
         </div>
