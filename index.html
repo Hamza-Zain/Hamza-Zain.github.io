@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner V20</title>
+    <title>Barcode Scanner V20</title> <!-- Updated to V20 -->
     <style>
-        /* (Keep all the existing styles unchanged) */
+        /* All styles remain unchanged */
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Barcode Scanner V20</h1>
+    <h1>Barcode Scanner V20</h1> <!-- Updated to V20 -->
     <button id="initializeButton">Initialize Scanner</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
@@ -35,14 +35,14 @@
     <div class="modal" id="modal">
         <p>Is this barcode correct?</p>
         <p id="detectedBarcode"></p>
-        <div id="barcodeInfo"></div>
+        <div id="barcodeInfo"></div> <!-- New line for barcode type and digits -->
         <div class="button-grid">
             <button class="confirm" onclick="confirmBarcode()">Correct</button>
             <button class="rescan" onclick="rescanBarcode()">Rescan</button>
             <button class="manual" onclick="enterManually()">Enter Manually</button>
             <button class="cancel" onclick="cancelBarcode()">Cancel</button>
         </div>
-        <div id="manualEntry">
+        <div id="manualEntry"> <!-- Hidden by default -->
             <input type="text" id="manualBarcode" placeholder="Enter barcode manually">
             <button onclick="submitManualBarcode()">Submit</button>
         </div>
@@ -58,18 +58,18 @@
         const modal = document.getElementById('modal');
         const modalOverlay = document.getElementById('modalOverlay');
         const detectedBarcodeElement = document.getElementById('detectedBarcode');
-        const barcodeInfoElement = document.getElementById('barcodeInfo');
+        const barcodeInfoElement = document.getElementById('barcodeInfo'); // New element for barcode info
         const manualEntryElement = document.getElementById('manualEntry');
         const manualBarcodeInput = document.getElementById('manualBarcode');
         let lastDetected = '';
         let confirmCounter = 0;
         let currentBarcode = '';
-        let isModalOpen = false;
+        let isModalOpen = false; // Flag to track if the modal is open
 
         // Initialize the speech synthesis
         const synth = window.speechSynthesis;
 
-        // Function to read out loud the detected barcode digit by digit
+        // Function to read out loud the detected barcode one digit at a time
         function speakBarcode(barcode) {
             if (synth.speaking) {
                 console.log("Speech synthesis is already in progress.");
@@ -79,18 +79,199 @@
             // Split the barcode into individual digits
             const digits = barcode.split('');
 
-            // Speak each digit with a slight delay
+            // Speak each digit one by one
             digits.forEach((digit, index) => {
-                setTimeout(() => {
-                    const utterance = new SpeechSynthesisUtterance(digit);
-                    synth.speak(utterance);
-                }, index * 500); // Add a 500ms delay between digits
+                const utterance = new SpeechSynthesisUtterance(digit);
+                synth.speak(utterance);
             });
         }
 
-        // (Keep all the other functions unchanged)
+        // All other functions remain unchanged
+        function getBarcodeType(barcode) {
+            const length = barcode.length;
+            if (length === 12) return 'UPC-A';
+            if (length === 6) return 'UPC-E';
+            if (length === 13) {
+                if (barcode.startsWith('978') || barcode.startsWith('979')) return 'ISBN';
+                if (barcode.startsWith('45') || barcode.startsWith('49')) return 'JAN-13';
+                return 'EAN-13';
+            }
+            if (length === 8) return 'EAN-8';
+            if (length === 10) return 'ISSN';
+            return 'Unknown';
+        }
 
-        // Function to update the UI with a scanned barcode
+        function validateBarcode(barcode) {
+            const type = getBarcodeType(barcode);
+            switch (type) {
+                case 'UPC-A':
+                    return /^\d{12}$/.test(barcode);
+                case 'UPC-E':
+                    return /^\d{6}$/.test(barcode);
+                case 'EAN-13':
+                    return /^\d{13}$/.test(barcode);
+                case 'EAN-8':
+                    return /^\d{8}$/.test(barcode);
+                case 'ISBN':
+                    return /^\d{13}$/.test(barcode) && (barcode.startsWith('978') || barcode.startsWith('979'));
+                case 'JAN-13':
+                    return /^\d{13}$/.test(barcode) && (barcode.startsWith('45') || barcode.startsWith('49'));
+                case 'ISSN':
+                    return /^\d{10}$/.test(barcode);
+                default:
+                    return false;
+            }
+        }
+
+        async function initializeCameraAndScanner() {
+            try {
+                // Hide the initialize button after user interaction
+                initializeButton.style.display = 'none';
+
+                // Find the back camera
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const backCamera = devices.find(
+                    (device) => device.kind === "videoinput" && device.label.toLowerCase().includes("back")
+                );
+
+                const constraints = backCamera
+                    ? { video: { deviceId: { exact: backCamera.deviceId }, width: 1280, height: 720 } }
+                    : { video: { facingMode: "environment", width: 1280, height: 720 } };
+
+                // Request the video stream
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                videoElement.srcObject = stream;
+
+                // Initialize QuaggaJS with multiple readers
+                Quagga.init({
+                    inputStream: {
+                        name: "Live",
+                        type: "LiveStream",
+                        target: videoElement,
+                        constraints
+                    },
+                    decoder: {
+                        readers: [
+                            "upc_reader", // UPC-A
+                            "upc_e_reader", // UPC-E
+                            "ean_reader", // EAN-13, EAN-8
+                            "ean_8_reader", // EAN-8
+                            "code_128_reader", // ISBN, ISSN
+                        ],
+                    },
+                    locator: {
+                        patchSize: "large", // More accurate detection
+                        halfSample: false
+                    },
+                    locate: true, // Detect barcodes in varying positions
+                    frequency: 10 // Process fewer frames for accuracy
+                }, function (err) {
+                    if (err) {
+                        console.error("Quagga initialization failed:", err);
+                        outputElement.textContent = "Error initializing barcode scanner.";
+                        outputElement.classList.add("error");
+                        return;
+                    }
+                    Quagga.start();
+                    outputElement.textContent = "Point your camera at barcodes.";
+                });
+
+                // Listen for barcode detection
+                Quagga.onDetected((data) => {
+                    if (isModalOpen) return; // Skip processing if the modal is open
+
+                    const code = data.codeResult.code;
+
+                    // Validate the barcode
+                    if (!validateBarcode(code)) {
+                        console.log("Invalid barcode detected:", code);
+                        return;
+                    }
+
+                    // Multiple frame verification for accuracy
+                    if (lastDetected === code) {
+                        confirmCounter++;
+                        if (confirmCounter >= 3) { // Require detection over 3 frames
+                            confirmCounter = 0;
+                            processBarcode(code);
+                        }
+                    } else {
+                        lastDetected = code;
+                        confirmCounter = 1;
+                    }
+                });
+            } catch (error) {
+                console.error("Error accessing camera or initializing scanner:", error);
+                outputElement.textContent = "Error accessing the camera or initializing scanner.";
+                outputElement.classList.add("error");
+            }
+        }
+
+        function processBarcode(barcode) {
+            currentBarcode = barcode;
+            showModal(barcode);
+        }
+
+        function showModal(barcode) {
+            detectedBarcodeElement.textContent = barcode;
+
+            // Determine the barcode type and number of digits
+            const barcodeType = getBarcodeType(barcode);
+            const barcodeDigits = barcode ? barcode.length : 0;
+
+            // Update the barcode info in the modal
+            barcodeInfoElement.textContent = `${barcodeType} (${barcodeDigits} digits)`;
+
+            modal.style.display = 'block';
+            modalOverlay.style.display = 'block';
+            videoElement.classList.add('dimmed');
+            isModalOpen = true; // Set the flag to true when the modal is open
+            manualEntryElement.style.display = 'none'; // Hide the manual entry box every time the modal is opened
+        }
+
+        function hideModal() {
+            modal.style.display = 'none';
+            modalOverlay.style.display = 'none';
+            videoElement.classList.remove('dimmed');
+            isModalOpen = false; // Set the flag to false when the modal is closed
+        }
+
+        function confirmBarcode() {
+            updateUIWithBarcode(currentBarcode);
+            hideModal();
+        }
+
+        function rescanBarcode() {
+            hideModal();
+        }
+
+        function enterManually() {
+            manualEntryElement.style.display = 'block'; // Show the manual entry box
+        }
+
+        function submitManualBarcode() {
+            const manualBarcode = manualBarcodeInput.value;
+
+            // Validate the manually entered barcode
+            if (!validateBarcode(manualBarcode)) {
+                alert("Invalid barcode. Please enter a valid barcode.");
+                return;
+            }
+
+            // Update the UI with the manually entered barcode
+            updateUIWithBarcode(manualBarcode);
+
+            // Clear the input field
+            manualBarcodeInput.value = '';
+
+            // Hide the modal
+            hideModal();
+        }
+
+        function cancelBarcode() {
+            hideModal(); // Simply close the modal
+        }
+
         function updateUIWithBarcode(barcode) {
             // Show the latest barcode at the top
             latestBarcodeElement.textContent = barcode ? `Latest Scanned: ${barcode}` : "Latest Scanned: (Empty)";
@@ -109,7 +290,7 @@
                 beepSound.play();
             }
 
-            // Read out the barcode digit by digit
+            // Read out the barcode
             speakBarcode(barcode);
         }
 
