@@ -237,7 +237,7 @@
         const digits = barcode.split('');
 
         // Define the delay between digits (in milliseconds)
-        const delayBetweenDigits = 300; // Adjust this value to control the speed
+        const delayBetweenDigits = 500; // Adjust this value to control the speed
 
         // Get the list of available voices
         const voices = synth.getVoices();
@@ -251,7 +251,7 @@
                 const utterance = new SpeechSynthesisUtterance(digit);
 
                 // Set the speech speed (default is 1)
-                utterance.rate = 0.8; // Adjust this value to control the speed (e.g., 0.8 = slower, 1.2 = faster)
+                utterance.rate = 1.5; // Adjust this value to control the speed (e.g., 0.8 = slower, 1.2 = faster)
 
                 // Set the voice to a female voice (if available)
                 if (femaleVoice) {
