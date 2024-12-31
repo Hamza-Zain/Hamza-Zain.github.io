@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner V12</title> <!-- Updated to V12 -->
+    <title>Barcode Scanner V13</title> <!-- Updated to V13 -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -145,11 +145,17 @@
         .dimmed {
             filter: brightness(50%);
         }
+        /* Barcode info styles */
+        #barcodeInfo {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Barcode Scanner V12</h1> <!-- Updated to V12 -->
+    <h1>Barcode Scanner V13</h1> <!-- Updated to V13 -->
     <button id="initializeButton">Initialize Scanner</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
@@ -164,6 +170,7 @@
     <div class="modal" id="modal">
         <p>Is this barcode correct?</p>
         <p id="detectedBarcode"></p>
+        <div id="barcodeInfo"></div> <!-- New line for barcode type and digits -->
         <div class="button-grid">
             <button class="confirm" onclick="confirmBarcode()">Correct</button>
             <button class="rescan" onclick="rescanBarcode()">Rescan</button>
@@ -186,6 +193,7 @@
         const modal = document.getElementById('modal');
         const modalOverlay = document.getElementById('modalOverlay');
         const detectedBarcodeElement = document.getElementById('detectedBarcode');
+        const barcodeInfoElement = document.getElementById('barcodeInfo'); // New element for barcode info
         const manualEntryElement = document.getElementById('manualEntry');
         const manualBarcodeInput = document.getElementById('manualBarcode');
         let lastDetected = '';
@@ -284,6 +292,23 @@
         // Function to show the modal
         function showModal(barcode) {
             detectedBarcodeElement.textContent = barcode;
+
+            // Determine the barcode type and number of digits
+            const barcodeDigits = barcode ? barcode.length : 0;
+            let barcodeType = '';
+            if (barcodeDigits === 13) {
+                barcodeType = 'EAN 13';
+            } else if (barcodeDigits === 12) {
+                barcodeType = 'UPC-A';
+            } else if (barcodeDigits === 8) {
+                barcodeType = 'EAN 8';
+            } else {
+                barcodeType = 'Unknown';
+            }
+
+            // Update the barcode info in the modal
+            barcodeInfoElement.textContent = `${barcodeType} (${barcodeDigits} digits)`;
+
             modal.style.display = 'block';
             modalOverlay.style.display = 'block';
             videoElement.classList.add('dimmed');
@@ -336,34 +361,12 @@
 
         // Function to update the UI with a scanned barcode
         function updateUIWithBarcode(barcode) {
-            // Determine the barcode type and number of digits
-            let barcodeType = '';
-            let barcodeDigits = barcode ? barcode.length : 0;
-
-            if (barcodeDigits === 13) {
-                barcodeType = 'EAN 13';
-            } else if (barcodeDigits === 12) {
-                barcodeType = 'UPC-A';
-            } else if (barcodeDigits === 8) {
-                barcodeType = 'EAN 8';
-            } else {
-                barcodeType = 'Unknown';
-            }
-
             // Show the latest barcode at the top
             latestBarcodeElement.textContent = barcode ? `Latest Scanned: ${barcode}` : "Latest Scanned: (Empty)";
 
             // Add the barcode to the top of the numbered list (even if it's empty)
             const listItem = document.createElement("li");
             listItem.textContent = barcode || "(Empty)"; // Use "(Empty)" if barcode is empty
-
-            // Add a new line with the barcode type and number of digits
-            const barcodeInfo = document.createElement("div");
-            barcodeInfo.textContent = `${barcodeType} (${barcodeDigits} digits)`;
-            barcodeInfo.style.fontSize = '0.8em';
-            barcodeInfo.style.color = '#666';
-            listItem.appendChild(barcodeInfo);
-
             barcodeListElement.insertBefore(listItem, barcodeListElement.firstChild);
 
             // Renumber the list
