@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner V9</title> <!-- Updated to V9 -->
+    <title>Barcode Scanner V10</title> <!-- Updated to V10 -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -147,9 +147,10 @@
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 </head>
 <body>
-    <h1>Barcode Scanner V9</h1> <!-- Updated to V9 -->
+    <h1>Barcode Scanner V10</h1> <!-- Updated to V10 -->
     <button id="initializeButton">Initialize Scanner</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
@@ -222,7 +223,7 @@
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 videoElement.srcObject = stream;
 
-                // Initialize QuaggaJS
+                // Initialize QuaggaJS for barcode scanning
                 Quagga.init({
                     inputStream: {
                         name: "Live",
@@ -231,7 +232,7 @@
                         constraints
                     },
                     decoder: {
-                        readers: ["ean_reader"], // Restrict to the specific barcode type
+                        readers: ["ean_reader", "code_128_reader", "upc_reader", "code_39_reader", "code_93_reader", "codabar_reader", "i2of5_reader", "2of5_reader", "code_39_vin_reader"], // Add more barcode types
                     },
                     locator: {
                         patchSize: "large", // More accurate detection
@@ -268,6 +269,32 @@
                         confirmCounter = 1;
                     }
                 });
+
+                // Initialize jsQR for QR code scanning
+                const canvasElement = document.createElement('canvas');
+                const canvasContext = canvasElement.getContext('2d');
+
+                function scanQRCode() {
+                    if (videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
+                        canvasElement.height = videoElement.videoHeight;
+                        canvasElement.width = videoElement.videoWidth;
+                        canvasContext.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+                        const imageData = canvasContext.getImageData(0, 0, canvasElement.width, canvasElement.height);
+                        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                            inversionAttempts: "dontInvert",
+                        });
+
+                        if (code) {
+                            processBarcode(code.data);
+                        }
+                    }
+
+                    if (!isModalOpen) {
+                        requestAnimationFrame(scanQRCode);
+                    }
+                }
+
+                scanQRCode();
             } catch (error) {
                 console.error("Error accessing camera or initializing scanner:", error);
                 outputElement.textContent = "Error accessing the camera or initializing scanner.";
