@@ -3,14 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner V1</title> <!-- Updated to V20 -->
+    <title>Barcode Scanner V3</title> <!-- Updated to V20 -->
     <style>
-        /* All styles remain unchanged */
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        video {
+            width: 100%;
+            max-width: 400px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        #output {
+            margin-top: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+        .error {
+            color: red;
+        }
+        #latestBarcode {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #4CAF50;
+        }
+        #initializeButton {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            font-size: 1em;
+            color: white;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #initializeButton:focus {
+            outline: none;
+        }
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            width: 300px; /* Set a fixed width for the modal */
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        /* Modal button styles */
+        .modal button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%; /* Make all buttons the same width */
+            box-sizing: border-box; /* Ensure padding is included in the width */
+        }
+        /* Correct button (green) */
+        .modal button.confirm {
+            background-color: #4CAF50; /* Green */
+            color: white;
+        }
+        /* Rescan button (blue) */
+        .modal button.rescan {
+            background-color: #2196F3; /* Blue */
+            color: white;
+        }
+        /* Enter Manually button (orange) */
+        .modal button.manual {
+            background-color: #FF9800; /* Orange */
+            color: white;
+        }
+        /* Cancel button (red) */
+        .modal button.cancel {
+            background-color: #F44336; /* Red */
+            color: white;
+        }
+        /* Modal button grid layout */
+        .modal .button-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Two columns */
+            gap: 10px; /* Space between buttons */
+        }
+        /* Manual entry box styles */
+        #manualEntry {
+            display: none; /* Hidden by default */
+            grid-column: span 2; /* Span across both columns */
+            margin-top: 10px; /* Add some spacing above the box */
+        }
+        #manualEntry input {
+            width: 100%; /* Full width to match the submit button */
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box; /* Ensure padding is included in the width */
+        }
+        #manualEntry button {
+            width: 100%; /* Full width */
+            padding: 10px;
+            background-color: #4CAF50; /* Green */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .dimmed {
+            filter: brightness(50%);
+        }
+        /* Barcode info styles */
+        #barcodeInfo {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+        /* Barcode list styles */
+        #barcodeList {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+        #barcodeList th, #barcodeList td {
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: left;
+        }
+        #barcodeList th {
+            background-color: #f9f9f9;
+            font-weight: bold;
+        }
+        #barcodeList tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Barcode Scanner V1</h1> <!-- Updated to V20 -->
+    <h1>Barcode Scanner V3</h1> <!-- Updated to V20 -->
     <button id="initializeButton">Initialize Scanner</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
@@ -86,7 +237,7 @@
             });
         }
 
-        // All other functions remain unchanged
+        // Function to determine barcode type
         function getBarcodeType(barcode) {
             const length = barcode.length;
             if (length === 12) return 'UPC-A';
@@ -101,6 +252,7 @@
             return 'Unknown';
         }
 
+        // Function to validate barcode based on type
         function validateBarcode(barcode) {
             const type = getBarcodeType(barcode);
             switch (type) {
@@ -207,11 +359,13 @@
             }
         }
 
+        // Function to process a confirmed barcode
         function processBarcode(barcode) {
             currentBarcode = barcode;
             showModal(barcode);
         }
 
+        // Function to show the modal
         function showModal(barcode) {
             detectedBarcodeElement.textContent = barcode;
 
@@ -229,6 +383,7 @@
             manualEntryElement.style.display = 'none'; // Hide the manual entry box every time the modal is opened
         }
 
+        // Function to hide the modal
         function hideModal() {
             modal.style.display = 'none';
             modalOverlay.style.display = 'none';
@@ -236,19 +391,23 @@
             isModalOpen = false; // Set the flag to false when the modal is closed
         }
 
+        // Function to confirm the detected barcode
         function confirmBarcode() {
             updateUIWithBarcode(currentBarcode);
             hideModal();
         }
 
+        // Function to rescan the barcode
         function rescanBarcode() {
             hideModal();
         }
 
+        // Function to enter barcode manually
         function enterManually() {
             manualEntryElement.style.display = 'block'; // Show the manual entry box
         }
 
+        // Function to submit manually entered barcode
         function submitManualBarcode() {
             const manualBarcode = manualBarcodeInput.value;
 
@@ -268,10 +427,12 @@
             hideModal();
         }
 
+        // Function to handle the "Cancel" button click
         function cancelBarcode() {
             hideModal(); // Simply close the modal
         }
 
+        // Function to update the UI with a scanned barcode
         function updateUIWithBarcode(barcode) {
             // Show the latest barcode at the top
             latestBarcodeElement.textContent = barcode ? `Latest Scanned: ${barcode}` : "Latest Scanned: (Empty)";
