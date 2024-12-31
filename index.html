@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner V5</title> <!-- Updated to V20 -->
+    <title>Barcode Scanner V6</title> <!-- Updated to V20 -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -161,7 +161,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Barcode Scanner V5</h1> <!-- Updated to V20 -->
+    <h1>Barcode Scanner V6</h1> <!-- Updated to V20 -->
     <button id="initializeButton">Initialize Scanner</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
@@ -251,7 +251,7 @@
                 const utterance = new SpeechSynthesisUtterance(digit);
 
                 // Set the speech speed (default is 1)
-                utterance.rate = 1.2; // Adjust this value to control the speed
+                utterance.rate = 1.1; // Adjust this value to control the speed
 
                 // Set the desired voice (if found)
                 if (desiredVoice) {
