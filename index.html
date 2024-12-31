@@ -220,22 +220,53 @@
         // Initialize the speech synthesis
         const synth = window.speechSynthesis;
 
+
+
+
+
+
+        
         // Function to read out loud the detected barcode one digit at a time
         function speakBarcode(barcode) {
-            if (synth.speaking) {
-                console.log("Speech synthesis is already in progress.");
-                return;
-            }
-
-            // Split the barcode into individual digits
-            const digits = barcode.split('');
-
-            // Speak each digit one by one
-            digits.forEach((digit, index) => {
-                const utterance = new SpeechSynthesisUtterance(digit);
-                synth.speak(utterance);
-            });
+        if (synth.speaking) {
+            console.log("Speech synthesis is already in progress.");
+            return;
         }
+
+        // Split the barcode into individual digits
+        const digits = barcode.split('');
+
+        // Define the delay between digits (in milliseconds)
+        const delayBetweenDigits = 500; // Adjust this value to control the speed
+
+        // Get the list of available voices
+        const voices = synth.getVoices();
+
+        // Find a female voice (if available)
+        const femaleVoice = voices.find(voice => voice.name.includes("Female") || voice.lang.includes("en-US"));
+
+        // Speak each digit one by one with a delay
+        digits.forEach((digit, index) => {
+            setTimeout(() => {
+                const utterance = new SpeechSynthesisUtterance(digit);
+
+                // Set the speech speed (default is 1)
+                utterance.rate = 0.8; // Adjust this value to control the speed (e.g., 0.8 = slower, 1.2 = faster)
+
+                // Set the voice to a female voice (if available)
+                if (femaleVoice) {
+                    utterance.voice = femaleVoice;
+                }
+
+                synth.speak(utterance);
+            }, index * delayBetweenDigits); // Schedule each digit with a delay
+        });
+        }   
+
+
+
+
+
 
         // Function to determine barcode type
         function getBarcodeType(barcode) {
