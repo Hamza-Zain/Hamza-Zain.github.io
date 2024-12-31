@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner V16</title> <!-- Updated to V16 -->
+    <title>Barcode Scanner V14</title> <!-- Updated to V14 -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -25,6 +25,19 @@
         }
         .error {
             color: red;
+        }
+        ol {
+            list-style-type: decimal;
+            padding: 0;
+            margin: 0;
+        }
+        li {
+            background: #f9f9f9;
+            margin: 5px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-align: left;
         }
         #latestBarcode {
             font-size: 1.5em;
@@ -138,44 +151,15 @@
             color: #666;
             margin-top: 5px;
         }
-        /* Barcode list styles */
-        #barcodeList {
-            width: 100%;
-            max-width: 600px;
-            margin: 20px auto;
-            border-collapse: collapse;
-        }
-        #barcodeList th, #barcodeList td {
-            padding: 10px;
-            border: 1px solid #ccc;
-            text-align: left;
-        }
-        #barcodeList th {
-            background-color: #f9f9f9;
-            font-weight: bold;
-        }
-        #barcodeList tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Barcode Scanner V16</h1> <!-- Updated to V16 -->
+    <h1>Barcode Scanner V14</h1> <!-- Updated to V14 -->
     <button id="initializeButton">Initialize Scanner</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
-    <table id="barcodeList">
-        <thead>
-            <tr>
-                <th>Value</th>
-                <th>Type</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Barcode rows will be added here dynamically -->
-        </tbody>
-    </table>
+    <ol id="barcodeList"></ol>
     <div id="output">Initializing barcode scanner...</div>
     
     <!-- Add an audio element for the buzzer sound -->
@@ -202,7 +186,7 @@
     <script>
         const videoElement = document.getElementById('video');
         const outputElement = document.getElementById('output');
-        const barcodeListElement = document.getElementById('barcodeList').getElementsByTagName('tbody')[0];
+        const barcodeListElement = document.getElementById('barcodeList');
         const latestBarcodeElement = document.getElementById('latestBarcode');
         const beepSound = document.getElementById('beepSound');
         const initializeButton = document.getElementById('initializeButton');
@@ -382,19 +366,27 @@
             // Show the latest barcode at the top
             latestBarcodeElement.textContent = barcode ? `Latest Scanned: ${barcode}` : "Latest Scanned: (Empty)";
 
-            // Add the barcode to the table with its type
-            const barcodeType = getBarcodeType(barcode);
-            const newRow = barcodeListElement.insertRow(0);
-            const valueCell = newRow.insertCell(0);
-            const typeCell = newRow.insertCell(1);
-            valueCell.textContent = barcode || "(Empty)";
-            typeCell.textContent = barcodeType;
+            // Add the barcode to the top of the numbered list (even if it's empty)
+            const listItem = document.createElement("li");
+            listItem.textContent = barcode || "(Empty)"; // Use "(Empty)" if barcode is empty
+            barcodeListElement.insertBefore(listItem, barcodeListElement.firstChild);
+
+            // Renumber the list
+            renumberList();
 
             // Play the beep sound (only if barcode is not empty)
             if (barcode) {
                 beepSound.currentTime = 0; // Reset sound to start
                 beepSound.play();
             }
+        }
+
+        // Function to renumber the list items
+        function renumberList() {
+            const items = barcodeListElement.querySelectorAll("li");
+            items.forEach((item, index) => {
+                item.textContent = `${index + 1}. ${item.textContent.split('. ')[1] || item.textContent}`;
+            });
         }
 
         // Add event listener to initialize the scanner on button click
