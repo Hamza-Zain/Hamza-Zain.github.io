@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner V4</title> <!-- Updated to V20 -->
+    <title>Barcode Scanner V3</title> <!-- Updated to V20 -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -161,7 +161,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Barcode Scanner V4</h1> <!-- Updated to V20 -->
+    <h1>Barcode Scanner V3</h1> <!-- Updated to V20 -->
     <button id="initializeButton">Initialize Scanner</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
@@ -225,7 +225,7 @@
 
 
 
-        
+
         // Function to read out loud the detected barcode one digit at a time
         function speakBarcode(barcode) {
         if (synth.speaking) {
@@ -251,7 +251,7 @@
                 const utterance = new SpeechSynthesisUtterance(digit);
 
                 // Set the speech speed (default is 1)
-                utterance.rate = 1.5; // Adjust this value to control the speed (e.g., 0.8 = slower, 1.2 = faster)
+                utterance.rate = 1.2; // Adjust this value to control the speed (e.g., 0.8 = slower, 1.2 = faster)
 
                 // Set the voice to a female voice (if available)
                 if (femaleVoice) {
