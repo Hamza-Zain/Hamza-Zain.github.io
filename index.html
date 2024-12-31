@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner V18</title> <!-- Updated to V18 -->
+    <title>Barcode Scanner V19</title> <!-- Updated to V19 -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -161,7 +161,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Barcode Scanner V18</h1> <!-- Updated to V18 -->
+    <h1>Barcode Scanner V19</h1> <!-- Updated to V19 -->
     <button id="initializeButton">Initialize Scanner</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
@@ -232,6 +232,29 @@
             return 'Unknown';
         }
 
+        // Function to validate barcode based on type
+        function validateBarcode(barcode) {
+            const type = getBarcodeType(barcode);
+            switch (type) {
+                case 'UPC-A':
+                    return /^\d{12}$/.test(barcode);
+                case 'UPC-E':
+                    return /^\d{6}$/.test(barcode);
+                case 'EAN-13':
+                    return /^\d{13}$/.test(barcode);
+                case 'EAN-8':
+                    return /^\d{8}$/.test(barcode);
+                case 'ISBN':
+                    return /^\d{13}$/.test(barcode) && (barcode.startsWith('978') || barcode.startsWith('979'));
+                case 'JAN-13':
+                    return /^\d{13}$/.test(barcode) && (barcode.startsWith('45') || barcode.startsWith('49'));
+                case 'ISSN':
+                    return /^\d{10}$/.test(barcode);
+                default:
+                    return false;
+            }
+        }
+
         async function initializeCameraAndScanner() {
             try {
                 // Hide the initialize button after user interaction
@@ -290,6 +313,12 @@
                     if (isModalOpen) return; // Skip processing if the modal is open
 
                     const code = data.codeResult.code;
+
+                    // Validate the barcode
+                    if (!validateBarcode(code)) {
+                        console.log("Invalid barcode detected:", code);
+                        return;
+                    }
 
                     // Multiple frame verification for accuracy
                     if (lastDetected === code) {
@@ -362,7 +391,13 @@
         function submitManualBarcode() {
             const manualBarcode = manualBarcodeInput.value;
 
-            // Update the UI with the manually entered barcode (even if it's empty)
+            // Validate the manually entered barcode
+            if (!validateBarcode(manualBarcode)) {
+                alert("Invalid barcode. Please enter a valid barcode.");
+                return;
+            }
+
+            // Update the UI with the manually entered barcode
             updateUIWithBarcode(manualBarcode);
 
             // Clear the input field
