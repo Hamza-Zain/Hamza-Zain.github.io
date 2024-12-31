@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner V19</title> <!-- Updated to V19 -->
+    <title>Barcode Scanner V20</title> <!-- Updated to V20 -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -161,7 +161,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Barcode Scanner V19</h1> <!-- Updated to V19 -->
+    <h1>Barcode Scanner V20</h1> <!-- Updated to V20 -->
     <button id="initializeButton">Initialize Scanner</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
@@ -216,6 +216,19 @@
         let confirmCounter = 0;
         let currentBarcode = '';
         let isModalOpen = false; // Flag to track if the modal is open
+
+        // Initialize the speech synthesis
+        const synth = window.speechSynthesis;
+
+        // Function to read out loud the detected barcode
+        function speakBarcode(barcode) {
+            if (synth.speaking) {
+                console.log("Speech synthesis is already in progress.");
+                return;
+            }
+            const utterance = new SpeechSynthesisUtterance(`Barcode detected: ${barcode}`);
+            synth.speak(utterance);
+        }
 
         // Function to determine barcode type
         function getBarcodeType(barcode) {
@@ -430,6 +443,9 @@
                 beepSound.currentTime = 0; // Reset sound to start
                 beepSound.play();
             }
+
+            // Read out the barcode
+            speakBarcode(barcode);
         }
 
         // Add event listener to initialize the scanner on button click
