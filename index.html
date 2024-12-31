@@ -3,20 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner V11</title> <!-- Updated to V11 -->
+    <title>Barcode Scanner V12</title> <!-- Updated to V12 -->
     <style>
-        /* (Your existing CSS styles remain unchanged) */
-        .barcode-type {
-            font-size: 0.8em;
-            color: #666;
-            margin-top: 5px;
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        video {
+            width: 100%;
+            max-width: 400px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        #output {
+            margin-top: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+        .error {
+            color: red;
+        }
+        ol {
+            list-style-type: decimal;
+            padding: 0;
+            margin: 0;
+        }
+        li {
+            background: #f9f9f9;
+            margin: 5px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-align: left;
+        }
+        #latestBarcode {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #4CAF50;
+        }
+        #initializeButton {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            font-size: 1em;
+            color: white;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #initializeButton:focus {
+            outline: none;
+        }
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            width: 300px; /* Set a fixed width for the modal */
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        /* Modal button styles */
+        .modal button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%; /* Make all buttons the same width */
+            box-sizing: border-box; /* Ensure padding is included in the width */
+        }
+        /* Correct button (green) */
+        .modal button.confirm {
+            background-color: #4CAF50; /* Green */
+            color: white;
+        }
+        /* Rescan button (blue) */
+        .modal button.rescan {
+            background-color: #2196F3; /* Blue */
+            color: white;
+        }
+        /* Enter Manually button (orange) */
+        .modal button.manual {
+            background-color: #FF9800; /* Orange */
+            color: white;
+        }
+        /* Cancel button (red) */
+        .modal button.cancel {
+            background-color: #F44336; /* Red */
+            color: white;
+        }
+        /* Modal button grid layout */
+        .modal .button-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Two columns */
+            gap: 10px; /* Space between buttons */
+        }
+        /* Manual entry box styles */
+        #manualEntry {
+            display: none; /* Hidden by default */
+            grid-column: span 2; /* Span across both columns */
+            margin-top: 10px; /* Add some spacing above the box */
+        }
+        #manualEntry input {
+            width: 100%; /* Full width to match the submit button */
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box; /* Ensure padding is included in the width */
+        }
+        #manualEntry button {
+            width: 100%; /* Full width */
+            padding: 10px;
+            background-color: #4CAF50; /* Green */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .dimmed {
+            filter: brightness(50%);
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 </head>
 <body>
-    <h1>Barcode Scanner V11</h1> <!-- Updated to V11 -->
+    <h1>Barcode Scanner V12</h1> <!-- Updated to V12 -->
     <button id="initializeButton">Initialize Scanner</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
@@ -31,7 +164,6 @@
     <div class="modal" id="modal">
         <p>Is this barcode correct?</p>
         <p id="detectedBarcode"></p>
-        <p id="detectedBarcodeType" class="barcode-type"></p>
         <div class="button-grid">
             <button class="confirm" onclick="confirmBarcode()">Correct</button>
             <button class="rescan" onclick="rescanBarcode()">Rescan</button>
@@ -54,13 +186,11 @@
         const modal = document.getElementById('modal');
         const modalOverlay = document.getElementById('modalOverlay');
         const detectedBarcodeElement = document.getElementById('detectedBarcode');
-        const detectedBarcodeTypeElement = document.getElementById('detectedBarcodeType');
         const manualEntryElement = document.getElementById('manualEntry');
         const manualBarcodeInput = document.getElementById('manualBarcode');
         let lastDetected = '';
         let confirmCounter = 0;
         let currentBarcode = '';
-        let currentBarcodeType = ''; // To store the type of the detected barcode
         let isModalOpen = false; // Flag to track if the modal is open
 
         // Function to validate EAN-13 barcodes
@@ -92,7 +222,7 @@
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 videoElement.srcObject = stream;
 
-                // Initialize QuaggaJS for barcode scanning
+                // Initialize QuaggaJS
                 Quagga.init({
                     inputStream: {
                         name: "Live",
@@ -101,7 +231,7 @@
                         constraints
                     },
                     decoder: {
-                        readers: ["ean_reader", "code_128_reader", "upc_reader", "code_39_reader", "code_93_reader", "codabar_reader", "i2of5_reader", "2of5_reader", "code_39_vin_reader"], // Add more barcode types
+                        readers: ["ean_reader"], // Restrict to the specific barcode type
                     },
                     locator: {
                         patchSize: "large", // More accurate detection
@@ -125,48 +255,19 @@
                     if (isModalOpen) return; // Skip processing if the modal is open
 
                     const code = data.codeResult.code;
-                    const type = data.codeResult.format; // Get the barcode type
 
                     // Multiple frame verification for accuracy
                     if (lastDetected === code) {
                         confirmCounter++;
                         if (confirmCounter >= 3) { // Require detection over 3 frames
                             confirmCounter = 0;
-                            currentBarcodeType = type; // Store the barcode type
-                            processBarcode(code, type);
+                            processBarcode(code);
                         }
                     } else {
                         lastDetected = code;
                         confirmCounter = 1;
                     }
                 });
-
-                // Initialize jsQR for QR code scanning
-                const canvasElement = document.createElement('canvas');
-                const canvasContext = canvasElement.getContext('2d');
-
-                function scanQRCode() {
-                    if (videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
-                        canvasElement.height = videoElement.videoHeight;
-                        canvasElement.width = videoElement.videoWidth;
-                        canvasContext.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
-                        const imageData = canvasContext.getImageData(0, 0, canvasElement.width, canvasElement.height);
-                        const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                            inversionAttempts: "dontInvert",
-                        });
-
-                        if (code) {
-                            currentBarcodeType = "QR Code"; // Set the type as QR Code
-                            processBarcode(code.data, "QR Code");
-                        }
-                    }
-
-                    if (!isModalOpen) {
-                        requestAnimationFrame(scanQRCode);
-                    }
-                }
-
-                scanQRCode();
             } catch (error) {
                 console.error("Error accessing camera or initializing scanner:", error);
                 outputElement.textContent = "Error accessing the camera or initializing scanner.";
@@ -175,16 +276,14 @@
         }
 
         // Function to process a confirmed barcode
-        function processBarcode(barcode, type) {
+        function processBarcode(barcode) {
             currentBarcode = barcode;
-            currentBarcodeType = type;
-            showModal(barcode, type);
+            showModal(barcode);
         }
 
         // Function to show the modal
-        function showModal(barcode, type) {
-            detectedBarcodeElement.textContent = barcode; // Display barcode
-            detectedBarcodeTypeElement.textContent = `Type: ${type}`; // Display barcode type on a new line
+        function showModal(barcode) {
+            detectedBarcodeElement.textContent = barcode;
             modal.style.display = 'block';
             modalOverlay.style.display = 'block';
             videoElement.classList.add('dimmed');
@@ -202,7 +301,7 @@
 
         // Function to confirm the detected barcode
         function confirmBarcode() {
-            updateUIWithBarcode(currentBarcode, currentBarcodeType);
+            updateUIWithBarcode(currentBarcode);
             hideModal();
         }
 
@@ -221,7 +320,7 @@
             const manualBarcode = manualBarcodeInput.value;
 
             // Update the UI with the manually entered barcode (even if it's empty)
-            updateUIWithBarcode(manualBarcode, "Manual Entry");
+            updateUIWithBarcode(manualBarcode);
 
             // Clear the input field
             manualBarcodeInput.value = '';
@@ -236,13 +335,35 @@
         }
 
         // Function to update the UI with a scanned barcode
-        function updateUIWithBarcode(barcode, type) {
+        function updateUIWithBarcode(barcode) {
+            // Determine the barcode type and number of digits
+            let barcodeType = '';
+            let barcodeDigits = barcode ? barcode.length : 0;
+
+            if (barcodeDigits === 13) {
+                barcodeType = 'EAN 13';
+            } else if (barcodeDigits === 12) {
+                barcodeType = 'UPC-A';
+            } else if (barcodeDigits === 8) {
+                barcodeType = 'EAN 8';
+            } else {
+                barcodeType = 'Unknown';
+            }
+
             // Show the latest barcode at the top
-            latestBarcodeElement.innerHTML = barcode ? `Latest Scanned: ${barcode}<br><span class="barcode-type">Type: ${type}</span>` : "Latest Scanned: (Empty)";
+            latestBarcodeElement.textContent = barcode ? `Latest Scanned: ${barcode}` : "Latest Scanned: (Empty)";
 
             // Add the barcode to the top of the numbered list (even if it's empty)
             const listItem = document.createElement("li");
-            listItem.innerHTML = barcode ? `${barcode}<br><span class="barcode-type">Type: ${type}</span>` : "(Empty)"; // Use "(Empty)" if barcode is empty
+            listItem.textContent = barcode || "(Empty)"; // Use "(Empty)" if barcode is empty
+
+            // Add a new line with the barcode type and number of digits
+            const barcodeInfo = document.createElement("div");
+            barcodeInfo.textContent = `${barcodeType} (${barcodeDigits} digits)`;
+            barcodeInfo.style.fontSize = '0.8em';
+            barcodeInfo.style.color = '#666';
+            listItem.appendChild(barcodeInfo);
+
             barcodeListElement.insertBefore(listItem, barcodeListElement.firstChild);
 
             // Renumber the list
@@ -259,8 +380,7 @@
         function renumberList() {
             const items = barcodeListElement.querySelectorAll("li");
             items.forEach((item, index) => {
-                const content = item.innerHTML.split('<br>')[0]; // Preserve the barcode and type
-                item.innerHTML = `${index + 1}. ${content}<br>${item.querySelector('.barcode-type').outerHTML}`;
+                item.textContent = `${index + 1}. ${item.textContent.split('. ')[1] || item.textContent}`;
             });
         }
 
