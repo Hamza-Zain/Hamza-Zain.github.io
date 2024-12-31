@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner V5</title>
+    <title>Barcode Scanner V9</title> <!-- Updated to V20 -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -161,7 +161,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Barcode Scanner V5</h1>
+    <h1>Barcode Scanner V9</h1> <!-- Updated to V20 -->
     <button id="initializeButton">Initialize Scanner</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
@@ -180,6 +180,7 @@
     
     <!-- Add an audio element for the buzzer sound -->
     <audio id="beepSound" src="store-scanner-beep.mp3"></audio>
+
     
     <!-- Modal for barcode confirmation -->
     <div class="modal-overlay" id="modalOverlay"></div>
@@ -220,47 +221,56 @@
         // Initialize the speech synthesis
         const synth = window.speechSynthesis;
 
-        // Function to read out loud the detected barcode one digit at a time
-        function speakBarcode(barcode) {
-            if (synth.speaking) {
-                console.log("Speech synthesis is already in progress.");
-                return;
+
+
+
+
+
+
+// Function to read out loud the detected barcode one digit at a time
+function speakBarcode(barcode) {
+    if (synth.speaking) {
+        console.log("Speech synthesis is already in progress.");
+        return;
+    }
+
+    // Split the barcode into individual digits
+    const digits = barcode.split('');
+
+    // Define the delay between digits (in milliseconds)
+    const delayBetweenDigits = 400; // Adjust this value to control the speed
+
+    // Get the list of available voices
+    const voices = synth.getVoices();
+
+    // Find a female voice (if available)
+    const femaleVoice = voices.find(voice => 
+        voice.name.toLowerCase().includes("female") || // Check for "female" in the voice name
+        voice.lang.startsWith("en") && voice.name.toLowerCase().includes("woman") // Check for "woman" in the voice name
+    );
+
+    // Speak each digit one by one with a delay
+    digits.forEach((digit, index) => {
+        setTimeout(() => {
+            const utterance = new SpeechSynthesisUtterance(digit);
+
+            // Set the speech speed (default is 1)
+            utterance.rate = 1.1; // Adjust this value to control the speed
+
+            // Set the female voice (if found)
+            if (femaleVoice) {
+                utterance.voice = femaleVoice;
+            } else {
+                console.warn("No female voice found. Using default voice.");
             }
 
-            // Split the barcode into individual digits
-            const digits = barcode.split('');
+            synth.speak(utterance);
+        }, index * delayBetweenDigits); // Schedule each digit with a delay
+    });
+}
 
-            // Define the delay between digits (in milliseconds)
-            const delayBetweenDigits = 400; // Adjust this value to control the speed
 
-            // Get the list of available voices
-            const voices = synth.getVoices();
 
-            // Find a female voice (if available)
-            const femaleVoice = voices.find(voice => 
-                voice.name.toLowerCase().includes("female") || // Check for "female" in the voice name
-                voice.lang.startsWith("en") && voice.name.toLowerCase().includes("woman") // Check for "woman" in the voice name
-            );
-
-            // Speak each digit one by one with a delay
-            digits.forEach((digit, index) => {
-                setTimeout(() => {
-                    const utterance = new SpeechSynthesisUtterance(digit);
-
-                    // Set the speech speed (default is 1)
-                    utterance.rate = 1.1; // Adjust this value to control the speed
-
-                    // Set the female voice (if found)
-                    if (femaleVoice) {
-                        utterance.voice = femaleVoice;
-                    } else {
-                        console.warn("No female voice found. Using default voice.");
-                    }
-
-                    synth.speak(utterance);
-                }, index * delayBetweenDigits); // Schedule each digit with a delay
-            });
-        }
 
         // Function to determine barcode type
         function getBarcodeType(barcode) {
@@ -420,10 +430,6 @@
         function confirmBarcode() {
             updateUIWithBarcode(currentBarcode);
             hideModal();
-
-            // Play the beep sound after confirming the barcode
-            beepSound.currentTime = 0; // Reset sound to start
-            beepSound.play();
         }
 
         // Function to rescan the barcode
@@ -474,8 +480,14 @@
             valueCell.textContent = barcode || "(Empty)";
             typeCell.textContent = barcodeType;
 
+            // Play the beep sound (only if barcode is not empty)
+            if (barcode) {
+                beepSound.currentTime = 0; // Reset sound to start
+                beepSound.play();
+            }
+
             // Read out the barcode
-            //speakBarcode(barcode);
+            speakBarcode(barcode);
         }
 
         // Add event listener to initialize the scanner on button click
