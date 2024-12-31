@@ -366,6 +366,11 @@
             const barcodeType = getBarcodeType(barcode);
             const barcodeDigits = barcode ? barcode.length : 0;
 
+
+            // Read out the barcode
+            speakBarcode(barcode);
+
+
             // Update the barcode info in the modal
             barcodeInfoElement.textContent = `${barcodeType} (${barcodeDigits} digits)`;
 
@@ -444,8 +449,7 @@
                 beepSound.play();
             }
 
-            // Read out the barcode
-            speakBarcode(barcode);
+
         }
 
         // Add event listener to initialize the scanner on button click
