@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner V3</title>
+    <title>Barcode Scanner V4</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -115,7 +115,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Barcode Scanner V3</h1>
+    <h1>Barcode Scanner V4</h1>
     <button id="initializeButton">Initialize Scanner</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
@@ -154,6 +154,7 @@
         let lastDetected = '';
         let confirmCounter = 0;
         let currentBarcode = '';
+        let isModalOpen = false; // Flag to track if the modal is open
 
         // Function to validate EAN-13 barcodes
         function validateEAN13(barcode) {
@@ -214,6 +215,8 @@
 
                 // Listen for barcode detection
                 Quagga.onDetected((data) => {
+                    if (isModalOpen) return; // Skip processing if the modal is open
+
                     const code = data.codeResult.code;
 
                     // Multiple frame verification for accuracy
@@ -247,6 +250,7 @@
             modal.style.display = 'block';
             modalOverlay.style.display = 'block';
             videoElement.classList.add('dimmed');
+            isModalOpen = true; // Set the flag to true when the modal is open
         }
 
         // Function to hide the modal
@@ -254,6 +258,7 @@
             modal.style.display = 'none';
             modalOverlay.style.display = 'none';
             videoElement.classList.remove('dimmed');
+            isModalOpen = false; // Set the flag to false when the modal is closed
         }
 
         // Function to confirm the detected barcode
