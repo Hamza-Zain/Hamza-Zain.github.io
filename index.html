@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner V8</title> <!-- Updated to V8 -->
+    <title>Barcode Scanner V11</title> <!-- Updated to V11 -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -167,7 +167,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Barcode Scanner V8</h1> <!-- Updated to V8 -->
+    <h1>Barcode Scanner V11</h1> <!-- Updated to V11 -->
     <button id="initializeButton">Initialize Scanner</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
@@ -448,13 +448,7 @@
         function submitManualBarcode() {
             const manualBarcode = manualBarcodeInput.value;
 
-            // Validate the manually entered barcode
-            if (!validateBarcode(manualBarcode)) {
-                alert("Invalid barcode. Please enter a valid barcode.");
-                return;
-            }
-
-            // Update the UI with the manually entered barcode
+            // Accept any input (no validation)
             updateUIWithBarcode(manualBarcode);
 
             // Clear the input field
