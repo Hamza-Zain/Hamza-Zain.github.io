@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner V6</title> <!-- Updated to V5 -->
+    <title>Barcode Scanner V7</title> <!-- Updated to V7 -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -94,6 +94,7 @@
         .modal button.manual {
             background-color: #FF9800; /* Orange */
             color: white;
+            grid-column: span 2; /* Span across two columns */
         }
         /* Cancel button (red) */
         .modal button.cancel {
@@ -166,7 +167,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Barcode Scanner V6</h1> <!-- Updated to V5 -->
+    <h1>Barcode Scanner V7</h1> <!-- Updated to V7 -->
     <button id="initializeButton">Initialize Scanner</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
@@ -196,10 +197,9 @@
         <div class="button-grid">
             <button class="confirm" onclick="confirmBarcode()">Correct</button>
             <button class="rescan" onclick="rescanBarcode()">Rescan</button>
+            <button class="read" onclick="readBarcode()">Read Barcode</button>
             <button class="manual" onclick="enterManually()">Enter Manually</button>
             <button class="cancel" onclick="cancelBarcode()">Cancel</button>
-            <!-- New "Read Barcode" button -->
-            <button class="read" onclick="readBarcode()">Read Barcode</button>
         </div>
         <div id="manualEntry"> <!-- Hidden by default -->
             <input type="text" id="manualBarcode" placeholder="Enter barcode manually">
