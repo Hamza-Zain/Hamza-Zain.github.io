@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner V5</title> <!-- Updated to V5 -->
+    <title>Barcode Scanner V6</title> <!-- Updated to V5 -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -166,7 +166,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Barcode Scanner V5</h1> <!-- Updated to V5 -->
+    <h1>Barcode Scanner V6</h1> <!-- Updated to V5 -->
     <button id="initializeButton">Initialize Scanner</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
@@ -395,16 +395,15 @@
         // Function to process a confirmed barcode
         function processBarcode(barcode) {
             currentBarcode = barcode;
-
-            // Play the beep sound when a barcode is detected
-            beepSound.currentTime = 0; // Reset sound to start
-            beepSound.play();
-
             showModal(barcode);
         }
 
         // Function to show the modal
         function showModal(barcode) {
+            // Play the beep sound when a barcode is detected
+            beepSound.currentTime = 0; // Reset sound to start
+            beepSound.play();
+            
             detectedBarcodeElement.textContent = barcode;
 
             // Determine the barcode type and number of digits
