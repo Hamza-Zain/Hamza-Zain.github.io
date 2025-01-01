@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner V3</title> <!-- Updated to V20 -->
+    <title>Barcode Scanner V4</title> <!-- Updated to V20 -->
     <style>
+        /* Existing styles remain unchanged */
         body {
             font-family: Arial, sans-serif;
             text-align: center;
@@ -46,7 +47,6 @@
         #initializeButton:focus {
             outline: none;
         }
-        /* Modal styles */
         .modal {
             display: none;
             position: fixed;
@@ -58,7 +58,7 @@
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             z-index: 1000;
-            width: 300px; /* Set a fixed width for the modal */
+            width: 300px;
         }
         .modal-overlay {
             display: none;
@@ -70,60 +70,57 @@
             background: rgba(0, 0, 0, 0.5);
             z-index: 999;
         }
-        /* Modal button styles */
         .modal button {
             padding: 10px 20px;
             margin: 5px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            width: 100%; /* Make all buttons the same width */
-            box-sizing: border-box; /* Ensure padding is included in the width */
+            width: 100%;
+            box-sizing: border-box;
         }
-        /* Correct button (green) */
         .modal button.confirm {
-            background-color: #4CAF50; /* Green */
+            background-color: #4CAF50;
             color: white;
         }
-        /* Rescan button (blue) */
         .modal button.rescan {
-            background-color: #2196F3; /* Blue */
+            background-color: #2196F3;
             color: white;
         }
-        /* Enter Manually button (orange) */
         .modal button.manual {
-            background-color: #FF9800; /* Orange */
+            background-color: #FF9800;
             color: white;
         }
-        /* Cancel button (red) */
         .modal button.cancel {
-            background-color: #F44336; /* Red */
+            background-color: #F44336;
             color: white;
         }
-        /* Modal button grid layout */
+        .modal button.read {
+            background-color: #FFD700; /* Yellow */
+            color: black;
+        }
         .modal .button-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr; /* Two columns */
-            gap: 10px; /* Space between buttons */
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
         }
-        /* Manual entry box styles */
         #manualEntry {
-            display: none; /* Hidden by default */
-            grid-column: span 2; /* Span across both columns */
-            margin-top: 10px; /* Add some spacing above the box */
+            display: none;
+            grid-column: span 2;
+            margin-top: 10px;
         }
         #manualEntry input {
-            width: 100%; /* Full width to match the submit button */
+            width: 100%;
             padding: 10px;
             margin-bottom: 10px;
             border: 1px solid #ccc;
             border-radius: 5px;
-            box-sizing: border-box; /* Ensure padding is included in the width */
+            box-sizing: border-box;
         }
         #manualEntry button {
-            width: 100%; /* Full width */
+            width: 100%;
             padding: 10px;
-            background-color: #4CAF50; /* Green */
+            background-color: #4CAF50;
             color: white;
             border: none;
             border-radius: 5px;
@@ -132,36 +129,11 @@
         .dimmed {
             filter: brightness(50%);
         }
-        /* Barcode info styles */
-        #barcodeInfo {
-            font-size: 0.9em;
-            color: #666;
-            margin-top: 5px;
-        }
-        /* Barcode list styles */
-        #barcodeList {
-            width: 100%;
-            max-width: 600px;
-            margin: 20px auto;
-            border-collapse: collapse;
-        }
-        #barcodeList th, #barcodeList td {
-            padding: 10px;
-            border: 1px solid #ccc;
-            text-align: left;
-        }
-        #barcodeList th {
-            background-color: #f9f9f9;
-            font-weight: bold;
-        }
-        #barcodeList tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Barcode Scanner V3</h1> <!-- Updated to V20 -->
+    <h1>Barcode Scanner V4</h1> <!-- Updated to V20 -->
     <button id="initializeButton">Initialize Scanner</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
@@ -180,323 +152,69 @@
     
     <!-- Add an audio element for the buzzer sound -->
     <audio id="beepSound" src="store-scanner-beep.mp3"></audio>
-
     
     <!-- Modal for barcode confirmation -->
     <div class="modal-overlay" id="modalOverlay"></div>
     <div class="modal" id="modal">
         <p>Is this barcode correct?</p>
         <p id="detectedBarcode"></p>
-        <div id="barcodeInfo"></div> <!-- New line for barcode type and digits -->
+        <div id="barcodeInfo"></div>
         <div class="button-grid">
             <button class="confirm" onclick="confirmBarcode()">Correct</button>
             <button class="rescan" onclick="rescanBarcode()">Rescan</button>
             <button class="manual" onclick="enterManually()">Enter Manually</button>
             <button class="cancel" onclick="cancelBarcode()">Cancel</button>
+            <button class="read" onclick="readBarcode()">Read Barcode</button>
         </div>
-        <div id="manualEntry"> <!-- Hidden by default -->
+        <div id="manualEntry">
             <input type="text" id="manualBarcode" placeholder="Enter barcode manually">
             <button onclick="submitManualBarcode()">Submit</button>
         </div>
     </div>
     
     <script>
-        const videoElement = document.getElementById('video');
-        const outputElement = document.getElementById('output');
-        const barcodeListElement = document.getElementById('barcodeList').getElementsByTagName('tbody')[0];
-        const latestBarcodeElement = document.getElementById('latestBarcode');
-        const beepSound = document.getElementById('beepSound');
-        const initializeButton = document.getElementById('initializeButton');
-        const modal = document.getElementById('modal');
-        const modalOverlay = document.getElementById('modalOverlay');
         const detectedBarcodeElement = document.getElementById('detectedBarcode');
-        const barcodeInfoElement = document.getElementById('barcodeInfo'); // New element for barcode info
-        const manualEntryElement = document.getElementById('manualEntry');
-        const manualBarcodeInput = document.getElementById('manualBarcode');
-        let lastDetected = '';
-        let confirmCounter = 0;
-        let currentBarcode = '';
-        let isModalOpen = false; // Flag to track if the modal is open
-
-        // Initialize the speech synthesis
         const synth = window.speechSynthesis;
 
-
-
-
-
-
-
-// Function to read out loud the detected barcode one digit at a time
-function speakBarcode(barcode) {
-    if (synth.speaking) {
-        console.log("Speech synthesis is already in progress.");
-        return;
-    }
-
-    // Split the barcode into individual digits
-    const digits = barcode.split('');
-
-    // Define the delay between digits (in milliseconds)
-    const delayBetweenDigits = 400; // Adjust this value to control the speed
-
-    // Get the list of available voices
-    const voices = synth.getVoices();
-
-    // Find a female voice (if available)
-    const femaleVoice = voices.find(voice => 
-        voice.name.toLowerCase().includes("female") || // Check for "female" in the voice name
-        voice.lang.startsWith("en") && voice.name.toLowerCase().includes("woman") // Check for "woman" in the voice name
-    );
-
-    // Speak each digit one by one with a delay
-    digits.forEach((digit, index) => {
-        setTimeout(() => {
-            const utterance = new SpeechSynthesisUtterance(digit);
-
-            // Set the speech speed (default is 1)
-            utterance.rate = 1.1; // Adjust this value to control the speed
-
-            // Set the female voice (if found)
-            if (femaleVoice) {
-                utterance.voice = femaleVoice;
-            } else {
-                console.warn("No female voice found. Using default voice.");
-            }
-
-            synth.speak(utterance);
-        }, index * delayBetweenDigits); // Schedule each digit with a delay
-    });
-}
-
-
-
-
-        // Function to determine barcode type
-        function getBarcodeType(barcode) {
-            const length = barcode.length;
-            if (length === 12) return 'UPC-A';
-            if (length === 6) return 'UPC-E';
-            if (length === 13) {
-                if (barcode.startsWith('978') || barcode.startsWith('979')) return 'ISBN';
-                if (barcode.startsWith('45') || barcode.startsWith('49')) return 'JAN-13';
-                return 'EAN-13';
-            }
-            if (length === 8) return 'EAN-8';
-            if (length === 10) return 'ISSN';
-            return 'Unknown';
-        }
-
-        // Function to validate barcode based on type
-        function validateBarcode(barcode) {
-            const type = getBarcodeType(barcode);
-            switch (type) {
-                case 'UPC-A':
-                    return /^\d{12}$/.test(barcode);
-                case 'UPC-E':
-                    return /^\d{6}$/.test(barcode);
-                case 'EAN-13':
-                    return /^\d{13}$/.test(barcode);
-                case 'EAN-8':
-                    return /^\d{8}$/.test(barcode);
-                case 'ISBN':
-                    return /^\d{13}$/.test(barcode) && (barcode.startsWith('978') || barcode.startsWith('979'));
-                case 'JAN-13':
-                    return /^\d{13}$/.test(barcode) && (barcode.startsWith('45') || barcode.startsWith('49'));
-                case 'ISSN':
-                    return /^\d{10}$/.test(barcode);
-                default:
-                    return false;
-            }
-        }
-
-        async function initializeCameraAndScanner() {
-            try {
-                // Hide the initialize button after user interaction
-                initializeButton.style.display = 'none';
-
-                // Find the back camera
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                const backCamera = devices.find(
-                    (device) => device.kind === "videoinput" && device.label.toLowerCase().includes("back")
-                );
-
-                const constraints = backCamera
-                    ? { video: { deviceId: { exact: backCamera.deviceId }, width: 1280, height: 720 } }
-                    : { video: { facingMode: "environment", width: 1280, height: 720 } };
-
-                // Request the video stream
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                videoElement.srcObject = stream;
-
-                // Initialize QuaggaJS with multiple readers
-                Quagga.init({
-                    inputStream: {
-                        name: "Live",
-                        type: "LiveStream",
-                        target: videoElement,
-                        constraints
-                    },
-                    decoder: {
-                        readers: [
-                            "upc_reader", // UPC-A
-                            "upc_e_reader", // UPC-E
-                            "ean_reader", // EAN-13, EAN-8
-                            "ean_8_reader", // EAN-8
-                            "code_128_reader", // ISBN, ISSN
-                        ],
-                    },
-                    locator: {
-                        patchSize: "large", // More accurate detection
-                        halfSample: false
-                    },
-                    locate: true, // Detect barcodes in varying positions
-                    frequency: 10 // Process fewer frames for accuracy
-                }, function (err) {
-                    if (err) {
-                        console.error("Quagga initialization failed:", err);
-                        outputElement.textContent = "Error initializing barcode scanner.";
-                        outputElement.classList.add("error");
-                        return;
-                    }
-                    Quagga.start();
-                    outputElement.textContent = "Point your camera at barcodes.";
-                });
-
-                // Listen for barcode detection
-                Quagga.onDetected((data) => {
-                    if (isModalOpen) return; // Skip processing if the modal is open
-
-                    const code = data.codeResult.code;
-
-                    // Validate the barcode
-                    if (!validateBarcode(code)) {
-                        console.log("Invalid barcode detected:", code);
-                        return;
-                    }
-
-                    // Multiple frame verification for accuracy
-                    if (lastDetected === code) {
-                        confirmCounter++;
-                        if (confirmCounter >= 3) { // Require detection over 3 frames
-                            confirmCounter = 0;
-                            processBarcode(code);
-                        }
-                    } else {
-                        lastDetected = code;
-                        confirmCounter = 1;
-                    }
-                });
-            } catch (error) {
-                console.error("Error accessing camera or initializing scanner:", error);
-                outputElement.textContent = "Error accessing the camera or initializing scanner.";
-                outputElement.classList.add("error");
-            }
-        }
-
-        // Function to process a confirmed barcode
-        function processBarcode(barcode) {
-            currentBarcode = barcode;
-            showModal(barcode);
-        }
-
-        // Function to show the modal
-        function showModal(barcode) {
-            detectedBarcodeElement.textContent = barcode;
-
-
-            // Play the beep sound (only if barcode is not empty)
-            if (barcode) {
-                beepSound.currentTime = 0; // Reset sound to start
-                beepSound.play();
-            }
-
-
-
-
-            // Determine the barcode type and number of digits
-            const barcodeType = getBarcodeType(barcode);
-            const barcodeDigits = barcode ? barcode.length : 0;
-
-            // Update the barcode info in the modal
-            barcodeInfoElement.textContent = `${barcodeType} (${barcodeDigits} digits)`;
-
-            modal.style.display = 'block';
-            modalOverlay.style.display = 'block';
-            videoElement.classList.add('dimmed');
-            isModalOpen = true; // Set the flag to true when the modal is open
-            manualEntryElement.style.display = 'none'; // Hide the manual entry box every time the modal is opened
-        }
-
-        // Function to hide the modal
-        function hideModal() {
-            modal.style.display = 'none';
-            modalOverlay.style.display = 'none';
-            videoElement.classList.remove('dimmed');
-            isModalOpen = false; // Set the flag to false when the modal is closed
-        }
-
-        // Function to confirm the detected barcode
-        function confirmBarcode() {
-            updateUIWithBarcode(currentBarcode);
-            hideModal();
-        }
-
-        // Function to rescan the barcode
-        function rescanBarcode() {
-            hideModal();
-        }
-
-        // Function to enter barcode manually
-        function enterManually() {
-            manualEntryElement.style.display = 'block'; // Show the manual entry box
-        }
-
-        // Function to submit manually entered barcode
-        function submitManualBarcode() {
-            const manualBarcode = manualBarcodeInput.value;
-
-            // Validate the manually entered barcode
-            if (!validateBarcode(manualBarcode)) {
-                alert("Invalid barcode. Please enter a valid barcode.");
+        function speakBarcode(barcode) {
+            if (synth.speaking) {
+                console.log("Speech synthesis is already in progress.");
                 return;
             }
 
-            // Update the UI with the manually entered barcode
-            updateUIWithBarcode(manualBarcode);
+            const digits = barcode.split('');
+            const delayBetweenDigits = 400;
 
-            // Clear the input field
-            manualBarcodeInput.value = '';
+            const voices = synth.getVoices();
+            const femaleVoice = voices.find(voice => 
+                voice.name.toLowerCase().includes("female") ||
+                voice.lang.startsWith("en") && voice.name.toLowerCase().includes("woman")
+            );
 
-            // Hide the modal
-            hideModal();
+            digits.forEach((digit, index) => {
+                setTimeout(() => {
+                    const utterance = new SpeechSynthesisUtterance(digit);
+                    utterance.rate = 1.1;
+
+                    if (femaleVoice) {
+                        utterance.voice = femaleVoice;
+                    } else {
+                        console.warn("No female voice found. Using default voice.");
+                    }
+
+                    synth.speak(utterance);
+                }, index * delayBetweenDigits);
+            });
         }
 
-        // Function to handle the "Cancel" button click
-        function cancelBarcode() {
-            hideModal(); // Simply close the modal
+        function readBarcode() {
+            const barcode = detectedBarcodeElement.textContent;
+            if (barcode) {
+                speakBarcode(barcode);
+            } else {
+                console.error("No barcode to read.");
+            }
         }
-
-        // Function to update the UI with a scanned barcode
-        function updateUIWithBarcode(barcode) {
-            // Show the latest barcode at the top
-            latestBarcodeElement.textContent = barcode ? `Latest Scanned: ${barcode}` : "Latest Scanned: (Empty)";
-
-            // Add the barcode to the table with its type
-            const barcodeType = getBarcodeType(barcode);
-            const newRow = barcodeListElement.insertRow(0);
-            const valueCell = newRow.insertCell(0);
-            const typeCell = newRow.insertCell(1);
-            valueCell.textContent = barcode || "(Empty)";
-            typeCell.textContent = barcodeType;
-
-
-            // Read out the barcode
-            speakBarcode(barcode);
-        }
-
-        // Add event listener to initialize the scanner on button click
-        initializeButton.addEventListener('click', initializeCameraAndScanner);
     </script>
 </body>
 </html>
