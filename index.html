@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner V4</title> <!-- Updated to V4 -->
+    <title>Barcode Scanner V5</title> <!-- Updated to V5 -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -32,26 +32,28 @@
             margin-bottom: 10px;
             color: #4CAF50;
         }
-        #initializeButton, #saveCsvButton, #addEmptyBarcodeButton {
-            display: inline-block;
-            margin-bottom: 20px;
+        /* Button styles */
+        .main-button {
+            display: block;
+            width: 100%; /* Full width of the screen */
+            margin-bottom: 10px;
             padding: 10px 20px;
             font-size: 1em;
             color: white;
-            background-color: #4CAF50;
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            box-sizing: border-box; /* Ensure padding is included in the width */
         }
-        #initializeButton:focus, #saveCsvButton:focus, #addEmptyBarcodeButton:focus {
-            outline: none;
-        }
-        #saveCsvButton {
-            background-color: #2196F3; /* Blue color for the save button */
-            display: none; /* Hidden by default */
+        #initializeButton {
+            background-color: #E91E63; /* Pink color for initialize button */
         }
         #addEmptyBarcodeButton {
-            background-color: #9C27B0; /* Purple color for the add empty barcode button */
+            background-color: #FFEB3B; /* Yellow color for add empty barcode button */
+            color: black; /* Text color for better contrast */
+        }
+        #saveCsvButton {
+            background-color: #4CAF50; /* Green color for save CSV button */
         }
         /* Modal styles */
         .modal {
@@ -174,10 +176,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Barcode Scanner V4</h1> <!-- Updated to V4 -->
-    <button id="initializeButton">Initialize Scanner</button>
-    <button id="addEmptyBarcodeButton">Add Empty Barcode To The List</button> <!-- New button -->
-    <button id="saveCsvButton">Save Barcodes as a CSV file</button>
+    <h1>Barcode Scanner V5</h1> <!-- Updated to V5 -->
+    <button id="initializeButton" class="main-button">Initialize Scanner</button>
+    <button id="addEmptyBarcodeButton" class="main-button">Add Empty Barcode To The List</button>
+    <button id="saveCsvButton" class="main-button">Save Barcodes as a CSV file</button>
     <video id="video" autoplay muted playsinline></video>
     <div id="latestBarcode">No barcode scanned yet.</div>
     <table id="barcodeList">
@@ -218,7 +220,7 @@
         const beepSound = document.getElementById('beepSound');
         const initializeButton = document.getElementById('initializeButton');
         const saveCsvButton = document.getElementById('saveCsvButton');
-        const addEmptyBarcodeButton = document.getElementById('addEmptyBarcodeButton'); // New button
+        const addEmptyBarcodeButton = document.getElementById('addEmptyBarcodeButton');
         const modal = document.getElementById('modal');
         const modalOverlay = document.getElementById('modalOverlay');
         const detectedBarcodeElement = document.getElementById('detectedBarcode');
@@ -441,7 +443,7 @@
             typeCell.textContent = barcodeType;
 
             if (barcodeListElement.rows.length > 0) {
-                saveCsvButton.style.display = 'inline-block';
+                saveCsvButton.style.display = 'block';
             }
         }
 
@@ -481,7 +483,7 @@
 
         initializeButton.addEventListener('click', initializeCameraAndScanner);
         saveCsvButton.addEventListener('click', downloadCSV);
-        addEmptyBarcodeButton.addEventListener('click', addEmptyBarcode); // New button event listener
+        addEmptyBarcodeButton.addEventListener('click', addEmptyBarcode);
     </script>
 </body>
 </html>
