@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner V2</title> <!-- Updated to V2 -->
+    <title>Barcode Scanner V1</title> <!-- Updated to V1 -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -62,7 +62,7 @@
             max-width: 400px;
             margin: 0 auto;
         }
-        /* Initializing text styles */
+        /* Initializing text and dots styles */
         #initializingText {
             position: absolute;
             top: 50%;
@@ -73,9 +73,39 @@
             color: #333;
             animation: blink 1s infinite; /* Blinking effect */
         }
+        .dots-container {
+            position: absolute;
+            top: calc(50% - 30px); /* Position above the text */
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 5px;
+        }
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: blinkDot 1.5s infinite;
+        }
+        .dot.red {
+            background-color: #F44336; /* Red dot */
+            animation-delay: 0s;
+        }
+        .dot.yellow {
+            background-color: #FFEB3B; /* Yellow dot */
+            animation-delay: 0.5s;
+        }
+        .dot.blue {
+            background-color: #2196F3; /* Blue dot */
+            animation-delay: 1s;
+        }
         @keyframes blink {
             0%, 100% { opacity: 1; }
             50% { opacity: 0; }
+        }
+        @keyframes blinkDot {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
         }
         /* Modal styles */
         .modal {
@@ -198,15 +228,20 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Barcode Scanner V2</h1> <!-- Updated to V2 -->
+    <h1>Barcode Scanner V1</h1> <!-- Updated to V1 -->
     <!-- Main menu buttons -->
-    <button id="initializeButton" class="main-button">Initialize Scanner</button>
+    <button id="initializeButton" class="main-button">Start Scanning Using Camera</button>
     <button id="addEmptyBarcodeButton" class="main-button">Add Empty Barcode To The List</button>
     <button id="saveCsvButton" class="main-button">Save Barcodes as a CSV file</button>
     <!-- Camera frame box -->
     <div class="camera-container">
         <video id="video" autoplay muted playsinline></video>
-        <div id="initializingText">Initializing barcode scanner...</div>
+        <div class="dots-container">
+            <div class="dot red"></div>
+            <div class="dot yellow"></div>
+            <div class="dot blue"></div>
+        </div>
+        <div id="initializingText">Waiting To Start Scanning</div>
     </div>
     <!-- Latest barcode and list -->
     <div id="latestBarcode">No barcode scanned yet.</div>
@@ -256,6 +291,7 @@
         const manualEntryElement = document.getElementById('manualEntry');
         const manualBarcodeInput = document.getElementById('manualBarcode');
         const initializingText = document.getElementById('initializingText');
+        const dotsContainer = document.querySelector('.dots-container');
         let lastDetected = '';
         let confirmCounter = 0;
         let currentBarcode = '';
@@ -331,6 +367,7 @@
             try {
                 initializeButton.style.display = 'none';
                 initializingText.style.display = 'block'; // Show initializing text
+                dotsContainer.style.display = 'flex'; // Show blinking dots
 
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 const backCamera = devices.find(
@@ -375,6 +412,7 @@
                     }
                     Quagga.start();
                     initializingText.style.display = 'none'; // Hide initializing text
+                    dotsContainer.style.display = 'none'; // Hide blinking dots
                     outputElement.textContent = "Point your camera at barcodes.";
                 });
 
