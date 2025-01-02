@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner V1</title> <!-- Updated to V1 -->
+    <title>Barcode Scanner V2</title> <!-- Updated to V2 -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -65,13 +65,12 @@
         /* Initializing text and dots styles */
         #initializingText {
             position: absolute;
-            top: 50%;
+            top: 60%; /* Adjusted to add space between dots and text */
             left: 50%;
             transform: translate(-50%, -50%);
             font-size: 1.2em;
             font-weight: bold;
             color: #333;
-            animation: blink 1s infinite; /* Blinking effect */
         }
         .dots-container {
             position: absolute;
@@ -98,10 +97,6 @@
         .dot.blue {
             background-color: #2196F3; /* Blue dot */
             animation-delay: 1s;
-        }
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
         }
         @keyframes blinkDot {
             0%, 100% { opacity: 0; }
@@ -228,7 +223,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Barcode Scanner V1</h1> <!-- Updated to V1 -->
+    <h1>Barcode Scanner V2</h1> <!-- Updated to V2 -->
     <!-- Main menu buttons -->
     <button id="initializeButton" class="main-button">Start Scanning Using Camera</button>
     <button id="addEmptyBarcodeButton" class="main-button">Add Empty Barcode To The List</button>
