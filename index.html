@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner V2</title> <!-- Updated to V2 -->
+    <title>Barcode Scanner V3</title> <!-- Updated to V3 -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -171,7 +171,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Barcode Scanner V2</h1> <!-- Updated to V2 -->
+    <h1>Barcode Scanner V3</h1> <!-- Updated to V3 -->
     <button id="initializeButton">Initialize Scanner</button>
     <button id="saveCsvButton">Save Barcodes as a CSV file</button>
     <video id="video" autoplay muted playsinline></video>
@@ -440,6 +440,18 @@
             }
         }
 
+        function getCurrentDateTime() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours() % 12 || 12).padStart(2, '0'); // 12-hour format
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+            return `${year}-${month}-${day}_${hours}-${minutes}-${seconds}${ampm}`;
+        }
+
         function downloadCSV() {
             const barcodes = [];
             const rows = barcodeListElement.getElementsByTagName('tr');
@@ -452,7 +464,7 @@
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "barcodes.csv");
+            link.setAttribute("download", `barcodes_${getCurrentDateTime()}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
